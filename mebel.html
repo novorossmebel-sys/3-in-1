@@ -164,6 +164,10 @@ tr.row-auto-other{background:#E9E4DD}
 }
 .egger-row .decor-select{flex:1;min-width:0}
 .egger-row .thick-select{width:150px;flex:none}
+/* Поле поиска декора по названию (над списком) */
+.decor-search{width:100%;margin-top:6px;font-size:12px;padding:6px 8px;border:1px solid var(--line);
+  border-radius:4px;background:#fff;font-family:inherit;color:var(--ink)}
+.decor-search:focus{outline:2px solid var(--brass-lt);outline-offset:-1px}
 
 /* ---- KP card in product tab ---- */
 .img-upload-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -1177,6 +1181,20 @@ function buildCountertopTable(){
     { calcKeys: ['len'] });
 }
 
+// Подпись декора для поиска (совпадает с текстом пункта в списке).
+function ldspLabel(d){ return `${d.code} — ${d.name} (${d.struct})`; }
+// Карта «подпись → индекс» для поиска декора по названию.
+const LDSP_LABEL_IDX = (function(){ const m = {}; EGGER_LDSP.forEach((d,i)=>{ const k = ldspLabel(d); if(m[k] == null) m[k] = i; }); return m; })();
+function ldspLabelToIdx(label){ return LDSP_LABEL_IDX[label] != null ? LDSP_LABEL_IDX[label] : null; }
+// Единый datalist со всеми декорами — общий для всех строк ЛДСП.
+function ensureLdspDatalist(){
+  if(document.getElementById('ldspDecorList')) return;
+  const dl = document.createElement('datalist');
+  dl.id = 'ldspDecorList';
+  EGGER_LDSP.forEach(d=>{ const o = document.createElement('option'); o.value = ldspLabel(d); dl.appendChild(o); });
+  document.body.appendChild(dl);
+}
+
 function buildItemsTable(){
   const body = $('itemsBody');
   body.innerHTML = '';
@@ -1278,6 +1296,18 @@ function buildItemsTable(){
 
     // EGGER decor/thickness picker — on the auto ЛДСП row and any extra decor rows.
     if(it.isLdspPicker){
+      ensureLdspDatalist();
+
+      // Поиск декора по названию: введите часть имени (дуб, серый, U999…) и выберите из подсказок.
+      const searchInput = document.createElement('input');
+      searchInput.type = 'text';
+      searchInput.className = 'decor-search';
+      searchInput.setAttribute('list', 'ldspDecorList');
+      searchInput.autocomplete = 'off';
+      searchInput.placeholder = 'Поиск декора по названию: дуб, серый, U999…';
+      if(it.eggerIndex != null && EGGER_LDSP[it.eggerIndex]){ searchInput.value = ldspLabel(EGGER_LDSP[it.eggerIndex]); }
+      nameTd.appendChild(searchInput);
+
       const eggerRow = document.createElement('div');
       eggerRow.className = 'egger-row';
 
@@ -1290,7 +1320,7 @@ function buildItemsTable(){
       EGGER_LDSP.forEach((d, di)=>{
         const opt = document.createElement('option');
         opt.value = di;
-        opt.textContent = `${d.code} — ${d.name} (${d.struct})`;
+        opt.textContent = ldspLabel(d);
         decorSelect.appendChild(opt);
       });
       decorSelect.value = it.eggerIndex != null ? it.eggerIndex : '';
@@ -1340,8 +1370,24 @@ function buildItemsTable(){
         updateComputed(); saveApp();
       }
 
-      decorSelect.addEventListener('change', ()=>{ refreshThickness(); applyEgger(); });
+      function syncSearchFromSelect(){
+        const d = decorSelect.value === '' ? null : EGGER_LDSP[Number(decorSelect.value)];
+        searchInput.value = d ? ldspLabel(d) : '';
+      }
+      decorSelect.addEventListener('change', ()=>{ refreshThickness(); applyEgger(); syncSearchFromSelect(); });
       thickSelect.addEventListener('change', applyEgger);
+
+      // Выбор декора по названию из поля поиска.
+      function applySearch(){
+        const idx = ldspLabelToIdx(searchInput.value.trim());
+        if(idx == null) return;
+        decorSelect.value = idx;
+        refreshThickness();
+        applyEgger();
+      }
+      searchInput.addEventListener('change', applySearch);
+      // Срабатывает и при выборе подсказки из datalist (значение становится точным).
+      searchInput.addEventListener('input', ()=>{ if(ldspLabelToIdx(searchInput.value.trim()) != null) applySearch(); });
 
       eggerRow.appendChild(decorSelect);
       eggerRow.appendChild(thickSelect);

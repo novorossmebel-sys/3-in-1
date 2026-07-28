@@ -312,7 +312,7 @@ footer a:hover{color:var(--brass-lt)}
           <div class="svccalc-note" id="svcMaterialNote"></div>
           <div class="svccalc-note">Расчёт предварительный и не является публичной офертой. Точную стоимость подтверждаем после проверки карты раскроя и спецификации.</div>
           <div class="svccalc-actions no-print">
-            <button type="button" id="svcPrint" class="btn btn-brass">🖨 Печать / сохранить в PDF</button>
+            <button type="button" id="svcPrint" class="btn btn-brass" title="Печать двух документов: смета и договор">🖨 Печать / PDF (смета + договор)</button>
           </div>
           <div class="svccalc-status" id="svcStatus"></div>
         </div>
@@ -716,6 +716,120 @@ footer a:hover{color:var(--brass-lt)}
     document.getElementById("svcPrintDoc").innerHTML=html;
   }
 
+  /* ---------- Договор (печатается вторым документом, по образцу калькулятора «Фасады») ---------- */
+  var MONTHS_GEN=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  function dateParts(str){ var p=String(str||"").split("."); var d=p[0]||"__", m=+p[1], y=p[2]||new Date().getFullYear();
+    return {d:d, month:(m>=1&&m<=12)?MONTHS_GEN[m-1]:"__________", y:y}; }
+  // Номер договора стабилен в пределах сессии для одного и того же документа.
+  var contractNos={};
+  function contractNoFor(name){ var k=name||"—"; if(!contractNos[k]) contractNos[k]=(""+Date.now()).slice(-5); return contractNos[k]; }
+  function currentGrand(){
+    var cur=compute(); var all=positions.slice();
+    if(cur.total>0 || all.length===0) all.push(cur);
+    return all.reduce(function(s,r){return s+r.total;},0);
+  }
+  function buildContractHtml(){
+    var sum=currentGrand();
+    var name=(elName.value||"").trim()||"____________________";
+    var phone=(elPhone.value||"").trim()||"____________________";
+    var no=contractNoFor(docName());
+    var d=new Date(), dd=("0"+d.getDate()).slice(-2)+"."+("0"+(d.getMonth()+1)).slice(-2)+"."+d.getFullYear();
+    var dp=dateParts(dd);
+    var sumStr=money(sum)+" ₽";
+    var E=esc;
+    return '<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Договор № '+E(no)+' — '+E(name)+'</title>'
+    +'<style>'
+    +'@page{size:A4;margin:16mm}'
+    +'*{box-sizing:border-box}'
+    +'body{margin:0;font-family:"Times New Roman",Georgia,serif;font-size:12px;line-height:1.5;color:#111}'
+    +'h1{font-size:15px;text-align:center;margin:0 0 2px;text-transform:uppercase;letter-spacing:.02em}'
+    +'.sub{text-align:center;margin:0 0 14px}'
+    +'.row{display:flex;justify-content:space-between;margin:0 0 14px}'
+    +'p{margin:0 0 9px;text-align:justify}'
+    +'.cl{font-weight:bold}'
+    +'.req{margin-top:16px;display:flex;gap:30px;justify-content:space-between}'
+    +'.req .col{width:48%}'
+    +'.req b{display:block;margin-bottom:3px}'
+    +'.sign{margin-top:22px}'
+    +'.muted{color:#333}'
+    +'.sum{font-weight:bold}'
+    +'hr{border:none;border-top:1px solid #999;margin:14px 0}'
+    +'</style></head><body>'
+    +'<h1>Договор № '+E(no)+'</h1>'
+    +'<div class="sub">на оказание услуг</div>'
+    +'<div class="row"><span>г. Новороссийск</span><span>«'+E(dp.d)+'» '+E(dp.month)+' '+E(dp.y)+' г.</span></div>'
+
+    +'<p><b>ИП Малюга Александр Сергеевич</b> (Исполнитель) и <b>'+E(name)+'</b> (ФИО Заказчика), '
+    +'именуемые «Стороны», заключили договор о нижеследующем:</p>'
+
+    +'<p><span class="cl">1. Предмет.</span> Исполнитель оказывает услуги по обработке плитных материалов: '
+    +'раскрой (распил) ЛДСП / МДФ / фанеры (нестинг ЧПУ), облицовывание кромкой, присадка (сверление отверстий), '
+    +'пазование. Объём и характеристики — в смете расчёта стоимости материалов и услуг.</p>'
+
+    +'<p><span class="cl">2. Цена.</span> Стоимость определяется по смете расчёта стоимости материалов и услуг '
+    +'(неотъемлемая часть договора) и составляет <span class="sum">'+E(sumStr)+'</span>. '
+    +'Оплата в течение 2-х рабочих дней с даты просчёта. Дата оплаты — дата зачисления средств.</p>'
+
+    +'<p><span class="cl">3. Срок и приёмка.</span> Срок оказания услуг — 10 рабочих дней. Приёмка — по Акту сдачи-приёмки. '
+    +'Если в течение 3 рабочих дней Заказчик не направил мотивированные возражения, услуги считаются принятыми. '
+    +'При недостатках Исполнитель устраняет их в разумный срок либо стоимость уменьшается соразмерно. '
+    +'Предельные отклонения размеров, качество раскроя и кромкооблицовки — согласно ГОСТ 16371-2014; '
+    +'стандартный допуск на раскрой — ±0,5 мм, если иное не согласовано.</p>'
+
+    +'<p><span class="cl">4. Права и обязанности.</span> Исполнитель обязан оказать услуги надлежащего качества в срок, '
+    +'вправе привлекать третьих лиц с сохранением ответственности. Заказчик обязан предоставить исходные данные / карту раскроя '
+    +'и материалы (при давальческом материале) и своевременно оплатить услуги.</p>'
+
+    +'<p><span class="cl">5. Ответственность сторон за просрочку.</span></p>'
+    +'<p>5.1. За просрочку оказания услуг Исполнитель уплачивает Заказчику пеню в размере 0,1 % от стоимости неоказанных услуг '
+    +'за каждый день просрочки — со дня, следующего за установленным сроком, до дня фактического исполнения включительно.</p>'
+    +'<p>5.2. За просрочку оплаты Заказчик уплачивает Исполнителю пеню в размере 0,1 % от неоплаченной суммы за каждый день '
+    +'просрочки — со дня, следующего за сроком оплаты, до дня поступления средств включительно.</p>'
+    +'<p>5.3. Сторона освобождается от ответственности, если докажет, что просрочка произошла не по её вине либо из-за '
+    +'обстоятельств непреодолимой силы. При наступлении таких обстоятельств сторона обязана уведомить другую сторону '
+    +'в письменной форме в течение 3 рабочих дней.</p>'
+    +'<p>5.4. Одновременно с неустойкой проценты по ст. 395 ГК РФ при просрочке денежного обязательства не начисляются.</p>'
+
+    +'<p><span class="cl">6. Прочие условия.</span> Конфиденциальность, срок действия до полного исполнения, расторжение по соглашению '
+    +'либо с уведомлением за ___ календарных дней. Споры — через переговоры, затем в суде по месту нахождения ответчика. '
+    +'Изменения — только письменно. Сообщения по e-mail из реквизитов имеют юридическую силу.</p>'
+
+    +'<hr>'
+    +'<div class="cl">Реквизиты сторон</div>'
+    +'<div class="req">'
+    +'  <div class="col muted">'
+    +'    <b>Исполнитель: ИП Малюга А. С.</b>'
+    +'    Адрес: 353919, Краснодарский край, г. Новороссийск, ул. Куникова, д. 55, к. 2<br>'
+    +'    ИНН: 231536618490, ОГРНИП: 323237500486910<br>'
+    +'    Р/с: 40802810926280005462<br>'
+    +'    Банк: Филиал «Ростовский» АО «Альфа-Банк», БИК: 046015207<br>'
+    +'    E-mail: aleksandr.maliuga@yandex.ru<br>'
+    +'    Телефон: +7 (988) 319-39-14'
+    +'    <div class="sign">Подпись: _________________ /Малюга А. С./</div>'
+    +'  </div>'
+    +'  <div class="col">'
+    +'    <b>Заказчик:</b>'
+    +'    ФИО: '+E(name)+'<br>'
+    +'    Адрес: _________________________<br>'
+    +'    E-mail: _____________________<br>'
+    +'    Телефон: '+E(phone)+''
+    +'    <div class="sign">Подпись: _________________ /______________/</div>'
+    +'    <div style="margin-top:10px">«'+E(dp.d)+'» '+E(dp.month)+' '+E(dp.y)+' г.</div>'
+    +'    <div style="margin-top:6px">М.П.</div>'
+    +'  </div>'
+    +'</div>'
+    +'</body></html>';
+  }
+  function printContract(){
+    var html=buildContractHtml();
+    var f=document.createElement("iframe");
+    f.setAttribute("aria-hidden","true");
+    f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+    document.body.appendChild(f);
+    var doc=f.contentWindow.document; doc.open(); doc.write(html); doc.close();
+    setTimeout(function(){ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){} setTimeout(function(){ f.remove(); },2000); },350);
+  }
+
   /* ---------- Быстрый поиск декора ---------- */
   function applyDecorSearch(){
     var v=elDecorSearch.value||"";
@@ -833,7 +947,8 @@ footer a:hover{color:var(--brass-lt)}
     doSave();
     document.title="Смета — "+name;
     buildPrintDoc();
-    window.print();
+    window.print();                 // 1-й документ: смета (расчёт стоимости)
+    setTimeout(printContract,500);  // 2-й документ: договор
   });
 
   /* ---------- Инициализация ---------- */

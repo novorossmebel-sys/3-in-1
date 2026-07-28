@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>СРЕДА · Расчёт фасадов</title>
+<style>
+  :root{
+    --bg:#f4f2ee;--surface:#ffffff;--ink:#1b1a18;--ink-soft:#4a473f;--muted:#8f897c;
+    --line:#e4e0d8;--line-strong:#d3cec3;--accent:#a9793f;--accent-soft:#f0e7da;
+    --ok:#4b7a4b;--danger:#b4453a;--radius:10px;
+    --shadow:0 1px 2px rgba(27,26,24,.04), 0 8px 30px rgba(27,26,24,.06);
+    --font:"Inter","Helvetica Neue",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:13px;line-height:1.4;
+    -webkit-font-smoothing:antialiased;padding:24px 20px 80px}
+  .wrap{max-width:1120px;margin:0 auto}
+
+  /* ---------- Панель управления ---------- */
+  .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .brand{display:flex;align-items:baseline;gap:12px;margin-right:auto}
+  .brand .logo{font-weight:700;letter-spacing:.42em;font-size:20px;text-transform:uppercase;padding-left:.42em}
+  .brand .tagline{color:var(--muted);font-size:12px;letter-spacing:.02em}
+  .btn{appearance:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+    font:inherit;font-size:13px;font-weight:500;padding:9px 16px;border-radius:8px;cursor:pointer;
+    transition:.15s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+  .btn:hover{border-color:var(--ink)}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.primary:hover{background:#000}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--ink-soft)}
+  .btn.ghost:hover{color:var(--ink);background:#fff}
+  .saved-flag{font-size:12px;color:var(--muted);min-width:110px}
+  .saved-flag.show{color:var(--ok)}
+
+  /* ---------- Лист документа ---------- */
+  .sheet{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:34px 38px 30px}
+  .doc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;
+    border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:22px}
+  .doc-head .logo{font-weight:700;letter-spacing:.42em;font-size:22px;text-transform:uppercase;padding-left:.42em}
+  .doc-head .sub{color:var(--muted);font-size:12px;margin-top:4px;letter-spacing:.04em}
+  .doc-head .meta{text-align:right;color:var(--muted);font-size:12px;line-height:1.7}
+
+  .field-row{display:flex;flex-wrap:wrap;gap:22px;margin-bottom:22px}
+  .field{flex:1 1 240px;min-width:200px}
+  .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--muted);margin-bottom:6px;font-weight:600}
+  .field input,.field select{width:100%;border:none;border-bottom:1.5px solid var(--line-strong);
+    background:transparent;font:inherit;font-size:16px;color:var(--ink);padding:6px 2px;outline:none;transition:.15s}
+  .field select{cursor:pointer}
+  .field input:focus,.field select:focus{border-color:var(--accent)}
+  .field.big input{font-size:19px;font-weight:600}
+
+  /* ---------- Блок фасада ---------- */
+  .facade{border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px 16px;margin-bottom:20px;background:#fff}
+  .facade+.facade{margin-top:0}
+  .facade-head{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;margin-bottom:6px}
+  .facade-head .field{margin:0}
+  .facade-head .fac-no{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;flex-basis:100%;margin-bottom:2px}
+  .fac-del{border:none;background:transparent;color:var(--line-strong);cursor:pointer;font-size:18px;line-height:1;
+    padding:6px 8px;border-radius:6px;transition:.15s;align-self:flex-end}
+  .fac-del:hover{color:var(--danger);background:#faf0ef}
+
+  /* ---------- Таблица позиций ---------- */
+  table.grid{width:100%;border-collapse:collapse;margin-top:10px;table-layout:fixed}
+  col.c-num{width:32px}
+  col.c-h,col.c-w{width:64px}
+  col.c-t{width:52px}
+  col.c-q{width:58px}
+  col.c-o{width:60px}
+  col.c-a{width:66px}
+  col.c-p{width:70px}
+  col.c-s{width:76px}
+  col.c-del{width:26px}
+  table.grid th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);
+    font-weight:600;text-align:center;padding:8px 4px;border-bottom:1.5px solid var(--line-strong);
+    white-space:normal;line-height:1.25;vertical-align:bottom}
+  table.grid th.left{text-align:left}
+  table.grid td .cell,table.grid td.calc{overflow:hidden;text-overflow:ellipsis}
+  table.grid td .cell.name{text-overflow:ellipsis}
+  table.grid td{border-bottom:1px solid var(--line);padding:0;vertical-align:middle}
+  table.grid td.num{text-align:center;color:var(--muted);font-variant-numeric:tabular-nums;width:34px;font-size:12px}
+  table.grid td .cell{width:100%;border:none;background:transparent;font:inherit;font-size:13px;
+    padding:5px 7px;outline:none;text-align:center;color:var(--ink);font-variant-numeric:tabular-nums}
+  table.grid td .cell.name{text-align:left}
+  table.grid td .cell:focus{background:var(--accent-soft);box-shadow:inset 0 0 0 1.5px var(--accent);border-radius:4px}
+  table.grid td.calc{text-align:right;padding:5px 7px;font-variant-numeric:tabular-nums;color:var(--ink-soft);white-space:nowrap}
+  table.grid td.calc.sum{font-weight:600;color:var(--ink)}
+  table.grid td.chk{text-align:center;width:64px}
+  table.grid td.chk input{width:15px;height:15px;margin:0;accent-color:var(--accent);cursor:pointer;vertical-align:middle}
+  table.grid td.del{width:28px;text-align:center}
+  .row-del{border:none;background:transparent;color:var(--line-strong);cursor:pointer;font-size:16px;
+    line-height:1;padding:4px 6px;border-radius:5px;transition:.15s}
+  .row-del:hover{color:var(--danger);background:#faf0ef}
+  tr.empty td .cell{color:var(--muted)}
+  /* обратка включена — жирный шрифт и размеры */
+  tr.row-back td .cell,tr.row-back td.calc{font-weight:700;color:var(--ink)}
+  tr.row-back td.num{font-weight:700;color:var(--ink-soft)}
+
+  .fac-sub{display:flex;justify-content:flex-end;gap:34px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+  .fac-sub .s-item{text-align:right}
+  .fac-sub .s-item .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .fac-sub .s-item .val{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:2px}
+  .fac-sub .s-item .note{font-size:10px;color:var(--accent);margin-top:1px}
+  .add-row{margin-top:12px}
+
+  .add-facade{margin:2px 0 24px}
+
+  /* ---------- Итог по документу ---------- */
+  .totals{display:flex;justify-content:flex-end;gap:40px;margin-top:6px;padding-top:16px;border-top:2px solid var(--ink)}
+  .totals .t-item{text-align:right}
+  .totals .t-item .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .totals .t-item .val{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px}
+  .totals .t-item.grand .val{font-size:24px;color:var(--accent)}
+
+  /* ---------- Подвал ---------- */
+  .doc-foot{margin-top:34px;padding-top:22px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap}
+  .doc-foot .cust{font-size:13px;color:var(--ink-soft);line-height:1.9}
+  .doc-foot .cust b{color:var(--ink)}
+  .sign-block{min-width:300px;text-align:right}
+  .sign-block .agree{font-size:13px;color:var(--ink-soft);margin-bottom:26px}
+  .sign-line{display:flex;align-items:flex-end;gap:14px;justify-content:flex-end}
+  .sign-line .line{flex:1;max-width:230px;border-bottom:1px solid var(--ink);height:1px}
+  .sign-line .cap{font-size:11px;color:var(--muted);white-space:nowrap}
+
+  /* ---------- Прайс ---------- */
+  .price-panel{margin-top:20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .price-panel summary{cursor:pointer;padding:16px 22px;font-weight:600;list-style:none;display:flex;align-items:center;gap:10px;user-select:none}
+  .price-panel summary::-webkit-details-marker{display:none}
+  .price-panel summary .chev{transition:.2s;color:var(--muted)}
+  .price-panel[open] summary .chev{transform:rotate(90deg)}
+  .price-panel summary .hint{margin-left:auto;font-weight:400;font-size:12px;color:var(--muted)}
+  .price-body{padding:4px 22px 22px}
+  .price-note{font-size:12px;color:var(--muted);margin:0 0 16px;line-height:1.6}
+  .price-sub{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin:18px 0 6px}
+  table.price{width:100%;border-collapse:collapse}
+  table.price th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+  table.price th.r,table.price td.r{text-align:right}
+  table.price th.c,table.price td.c{text-align:center}
+  table.price td{padding:4px 10px;border-bottom:1px solid var(--line)}
+  table.price input[type=text],table.price input[type=number]{border:1px solid var(--line);border-radius:6px;padding:7px 9px;font:inherit;font-size:13px;outline:none}
+  table.price input.nm{width:100%}
+  table.price input.pr{text-align:right;width:104px;font-variant-numeric:tabular-nums}
+  table.price input:focus{border-color:var(--accent)}
+  .price-opts{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px}
+  .price-opts .opt label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);display:block;margin-bottom:5px;font-weight:600}
+  .price-opts .opt input{border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit;width:120px;outline:none}
+  .price-actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap}
+
+  .foot-hint{max-width:1120px;margin:22px auto 0;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+
+  /* ---------- Печать ---------- */
+  @media print{
+    @page{size:A4;margin:10mm}
+    body{background:#fff;padding:0;font-size:10px}
+    .no-print{display:none !important}
+    .sheet{border:none;box-shadow:none;border-radius:0;padding:0}
+
+    /* шапка компактнее */
+    .doc-head{padding-bottom:10px;margin-bottom:12px}
+    .doc-head .logo{font-size:16px}
+    .field-row{gap:14px;margin-bottom:12px}
+    .field label{font-size:8px;margin-bottom:2px}
+    .field input,.field select{font-size:11px;padding:2px 2px;border-bottom:1px solid #bbb}
+    .field.big input{font-size:12px}
+
+    /* блок фасада компактнее */
+    .facade{border:1px solid #ccc;page-break-inside:avoid;padding:10px 12px;margin-bottom:12px}
+    .facade-head{gap:12px;margin-bottom:2px}
+    .facade .fac-no{font-size:8px}
+
+    /* таблица позиций: мелкий шрифт, узкие числовые колонки, широкое «Наименование» */
+    table.grid{margin-top:6px}
+    col.c-h,col.c-w{width:48px}
+    col.c-t{width:38px}
+    col.c-q{width:40px}
+    col.c-o{width:38px}
+    col.c-a{width:48px}
+    col.c-p{width:52px}
+    col.c-s{width:60px}
+    col.c-del{width:0}
+    table.grid th{font-size:8px;padding:4px 3px;letter-spacing:0}
+    table.grid td.num{font-size:9px}
+    table.grid td .cell{font-size:10px;padding:3px 4px;text-overflow:clip}
+    table.grid td .cell.name{letter-spacing:-.01em}
+    table.grid td.calc{font-size:10px;padding:3px 4px}
+    table.grid td .cell:focus{background:transparent;box-shadow:none}
+    table.grid td.chk{width:auto}
+    table.grid td.chk input{-webkit-appearance:checkbox;appearance:checkbox;width:12px;height:12px}
+
+    /* итоги / подпись */
+    .fac-sub{gap:24px;margin-top:8px;padding-top:6px}
+    .fac-sub .s-item .val{font-size:11px}
+    .totals{gap:26px;margin-top:4px;padding-top:10px}
+    .totals .t-item .lbl{font-size:8px}
+    .totals .t-item .val{font-size:12px}
+    .totals .t-item.grand .val{font-size:18px}
+    .doc-foot{margin-top:20px;padding-top:14px}
+    .doc-foot,.totals,.fac-sub{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Панель управления -->
+  <div class="toolbar no-print">
+    <div class="brand">
+      <span class="logo">Среда</span>
+      <span class="tagline">Расчёт стоимости фасадов · МДФ / шпон</span>
+    </div>
+    <span class="saved-flag" id="savedFlag"></span>
+    <select class="btn" id="loadSelect" title="10 последних расчётов" style="max-width:190px">
+      <option value="">Открыть расчёт…</option>
+    </select>
+    <button class="btn" id="newBtn">＋ Новый</button>
+    <button class="btn" id="saveBtn">💾 Сохранить файл</button>
+    <button class="btn primary" id="printBtn" title="Печать двух документов: бланк заказа и договор">🖶 Печать / PDF (бланк + договор)</button>
+  </div>
+
+  <!-- Лист -->
+  <div class="sheet" id="sheet">
+    <div class="doc-head">
+      <div>
+        <div class="logo">Среда</div>
+        <div class="sub">Мебель на заказ · mebelart.net</div>
+      </div>
+      <div class="meta">
+        Спецификация № <span id="docNo">—</span><br>
+        Дата: <span id="docDate">—</span>
+      </div>
+    </div>
+
+    <!-- Имя / заказчик: автосохранение нового файла -->
+    <div class="field-row">
+      <div class="field big" style="flex:2 1 320px">
+        <label>Наименование / заказчик <span style="color:var(--accent)">— имя файла, автосохранение</span></label>
+        <input id="docName" type="text" placeholder="Например: Иванов А. · кухня" autocomplete="off">
+      </div>
+      <div class="field" style="flex:1 1 200px">
+        <label>Телефон</label>
+        <input id="docPhone" type="tel" inputmode="tel" placeholder="+7" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Блоки фасадов -->
+    <div id="facades"></div>
+
+    <div class="add-facade no-print">
+      <button class="btn" id="addFacadeBtn">＋ Добавить вид фасада</button>
+    </div>
+
+    <!-- Итог по документу -->
+    <div class="totals">
+      <div class="t-item"><div class="lbl">Видов фасадов</div><div class="val" id="totFac">0</div></div>
+      <div class="t-item"><div class="lbl">Всего площадь</div><div class="val" id="totArea">0 м²</div></div>
+      <div class="t-item"><div class="lbl">Всего штук</div><div class="val" id="totQty">0</div></div>
+      <div class="t-item grand"><div class="lbl">Итого</div><div class="val" id="totSum">0 ₽</div></div>
+    </div>
+
+    <!-- Подвал -->
+    <div class="doc-foot">
+      <div class="cust">
+        Заказчик: <b id="custName">—</b><br>
+        Телефон: <span id="custPhone">—</span><br>
+        Итого к оплате: <b id="custSum">0 ₽</b>
+      </div>
+      <div class="sign-block">
+        <div class="agree">С размерами согласен</div>
+        <div class="sign-line">
+          <span class="line"></span>
+          <span class="cap">подпись / расшифровка</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Прайс -->
+  <details class="price-panel no-print" id="pricePanel">
+    <summary>
+      <span class="chev">▸</span> Прайс-лист
+      <span class="hint">₽/м² · сохраняется в браузере</span>
+    </summary>
+    <div class="price-body">
+      <p class="price-note">
+        Сумма детали = площадь (В×Ш, м²) × (цена ₽/м² + обратка, если отмечена) × количество.
+        По каждому виду фасада действует минимальная площадь заказа. «Изготовление» — цена зависит от толщины;
+        «Покраска материала заказчика» — фиксированная цена за м². Правьте прайс здесь, изменения сохраняются.
+      </p>
+
+      <div class="price-sub">Изготовление (МДФ + покраска) — ₽/м² по толщине</div>
+      <table class="price">
+        <thead><tr><th>Тип отделки</th><th class="r">16 мм</th><th class="r">19 мм</th><th class="r">22 мм</th><th class="no-print"></th></tr></thead>
+        <tbody id="makeRows"></tbody>
+      </table>
+
+      <div class="price-sub">Покраска материала заказчика — ₽/м²</div>
+      <table class="price">
+        <thead><tr><th>Тип отделки</th><th class="r">Цена ₽/м²</th><th class="c">Шпон</th><th class="no-print"></th></tr></thead>
+        <tbody id="flatRows"></tbody>
+      </table>
+
+      <div class="price-opts">
+        <div class="opt"><label>Обратка · краска, ₽/м²</label><input id="obrPaint" type="number" step="1" min="0"></div>
+        <div class="opt"><label>Обратка · шпон, ₽/м²</label><input id="obrVeneer" type="number" step="1" min="0"></div>
+        <div class="opt"><label>Мин. площадь, м²</label><input id="minArea" type="number" step="0.01" min="0"></div>
+        <div class="opt"><label>Наценка, %</label><input id="markup" type="number" step="1" min="0"></div>
+      </div>
+      <div class="price-actions">
+        <button class="btn ghost" id="addMakeBtn">＋ Отделка (изготовление)</button>
+        <button class="btn ghost" id="addFlatBtn">＋ Отделка (покраска заказчика)</button>
+        <button class="btn ghost" id="resetPriceBtn">↺ Сбросить прайс</button>
+      </div>
+    </div>
+  </details>
+
+  <div class="foot-hint no-print">
+    Навигация по таблице — стрелками ↑ ↓ ← → и Enter, как в Excel. Галочка «обратка» делает строку жирной и добавляет цену покраски обратной стороны.
+    В памяти браузера хранятся 10 последних расчётов (под именем из поля «Наименование / заказчик»); кнопка «Сохранить файл» выгружает расчёт отдельным документом.
+    Кнопка «Печать / PDF» формирует два документа подряд: сначала бланк заказа, затем договор (в диалоге печати выберите «Сохранить как PDF» для каждого).
+  </div>
+</div>
+
+<!-- Встроенные данные для сохранённого документа (заполняется при «Сохранить файл») -->
+<script id="embedded-data" type="application/json"></script>
+
+<script>
+"use strict";
+/* Доступ только через защищённую паролем страницу index.html.
+   Открыт напрямую (не во вкладке) и это оригинал (пустой embedded-data) — уводим на вход.
+   Сохранённые файлы расчётов (embedded-data заполнен) открываются как обычно. */
+(function(){ if(window.top===window.self){ var e=document.getElementById('embedded-data'); if(!e||!e.textContent.trim()){ location.replace('index.html'); } } })();
+
+/* ===== Прайс ===== */
+// Изготовление: цена м² по толщине (из Excel)
+const DEFAULT_MAKE = [
+  { name:"Мыло (мат)",           cat:"make", t:{ "16":6445,  "19":6825,  "22":7254  } },
+  { name:"Фреза (мат)",          cat:"make", t:{ "16":9295,  "19":9675,  "22":10001 } },
+  { name:"Глянец",               cat:"make", t:{ "16":8853,  "19":9233,  "22":9663  } },
+  { name:"Фрезерованный глянец", cat:"make", t:{ "16":11703, "19":12083, "22":12513 } },
+];
+// Покраска материала заказчика: фикс. цена м²
+const DEFAULT_FLAT = [
+  { name:"Покраска заказчика · фреза",  cat:"flat", flat:6580,  veneer:false },
+  { name:"Покраска заказчика · мыло",   cat:"flat", flat:4500,  veneer:false },
+  { name:"Покраска заказчика · глянец", cat:"flat", flat:7280,  veneer:false },
+  { name:"Шпон файнлайн",               cat:"flat", flat:8600,  veneer:true  },
+  { name:"Шпон натуральный",            cat:"flat", flat:11600, veneer:true  },
+  { name:"Шпон рамка",                  cat:"flat", flat:13400, veneer:true  },
+];
+const THK=["16","19","22"];
+const DEF={ obrPaint:4500, obrVeneer:5500, minArea:0.7, markup:0 };
+
+let state=null, finishes=[], opts={...DEF}, currentName="";
+const LS_PREFIX="sreda_calc_v1__", LS_PRICES="sreda_prices_v3", LS_INDEX="sreda_recent_v1";
+const MAX_RECENT=10;
+const $=s=>document.querySelector(s);
+
+/* ===== утилиты ===== */
+const fmt = n => Math.round(n).toLocaleString("ru-RU");
+const fmt2 = n => n.toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2});
+function num(v){ const x=parseFloat(String(v).replace(",",".")); return isFinite(x)&&x>0?x:0; }
+function todayStr(){ return new Date().toLocaleDateString("ru-RU"); }
+const MONTHS_GEN=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+function dateParts(str){ const p=String(str||"").split("."); const d=p[0]||"__", m=+p[1], y=p[2]||new Date().getFullYear();
+  return {d, month:(m>=1&&m<=12)?MONTHS_GEN[m-1]:"__________", y}; }
+function nearestThk(t){ if(!t) return null; let b=THK[0],d=1e9; for(const k of THK){const dd=Math.abs(t-(+k)); if(dd<d){d=dd;b=k;}} return b; }
+function blankRow(){ return {name:"",nameAuto:true,h:"",w:"",t:"",qty:"",back:false}; }
+function blankFacade(){ return {name:"",material:0,rows:[blankRow(),blankRow(),blankRow()]}; }
+function blankState(){ return {docName:"",phone:"+7",date:todayStr(),docNo:String(Date.now()).slice(-5),facades:[blankFacade()]}; }
+function escapeHtml(s){ return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
+function escapeAttr(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+/* ===== прайс: загрузка / сохранение ===== */
+function defFinishes(){ return DEFAULT_MAKE.map(f=>({...f,t:{...f.t}})).concat(DEFAULT_FLAT.map(f=>({...f}))); }
+function loadPrices(){
+  try{ const raw=localStorage.getItem(LS_PRICES);
+    if(raw){ const o=JSON.parse(raw); finishes=o.finishes||defFinishes(); opts={...DEF,...(o.opts||{})}; return; }
+  }catch(e){}
+  finishes=defFinishes(); opts={...DEF};
+}
+function savePrices(){ try{ localStorage.setItem(LS_PRICES,JSON.stringify({finishes,opts})); }catch(e){} }
+function finName(i){ return (finishes[i]&&finishes[i].name)||""; }
+function isVeneer(i){ return !!(finishes[i]&&finishes[i].veneer); }
+function frontPrice(finIdx,thickness){
+  const f=finishes[finIdx]; if(!f) return 0;
+  let base=0;
+  if(f.cat==="make"){ const tk=nearestThk(thickness); base= tk? (f.t[tk]||0):0; }
+  else base=f.flat||0;
+  return base*(1+opts.markup/100);
+}
+function backPrice(finIdx){ return (isVeneer(finIdx)?opts.obrVeneer:opts.obrPaint)*(1+opts.markup/100); }
+
+/* ===== расчёт ===== */
+function autoName(fac){ return [fac.name, finName(fac.material)].filter(Boolean).join(" · "); }
+function rowCalc(fac,r){
+  const h=num(r.h), w=num(r.w), qty=num(r.qty), tv=num(r.t);
+  const front=frontPrice(fac.material,tv);
+  const back=r.back?backPrice(fac.material):0;
+  const unit=front+back;
+  const areaOne=(h*w)/1e6;
+  const areaTotal=areaOne*qty;
+  const sum=areaTotal*unit;
+  const hasData=!!(h||w||qty||tv||r.back||(!r.nameAuto&&r.name.trim()));
+  return {front,unit,areaTotal,sum,hasData,tv};
+}
+function facadeTotals(fac){
+  let area=0,sum=0,qty=0,count=0;
+  // представительная цена фронта для добора мин. площади (по толщине самой большой детали)
+  let refThk=null,refArea=-1;
+  fac.rows.forEach(r=>{
+    const c=rowCalc(fac,r);
+    if(c.areaTotal>0){ area+=c.areaTotal; if(c.areaTotal>refArea){refArea=c.areaTotal;refThk=c.tv;} }
+    sum+=c.sum; qty+=num(r.qty); if(c.sum>0) count++;
+  });
+  const front=frontPrice(fac.material, refThk||16);
+  let billed=sum, minApplied=false;
+  if(area>0 && area<opts.minArea){ billed=sum+(opts.minArea-area)*front; minApplied=true; }
+  return {area,sum,billed,qty,count,minApplied};
+}
+
+/* ===== рендер блоков фасадов ===== */
+function renderFacades(){
+  const box=$("#facades"); box.innerHTML="";
+  state.facades.forEach((fac,fi)=>box.appendChild(buildFacade(fac,fi)));
+  renderGrandTotals();
+}
+function buildFacade(fac,fi){
+  const sec=document.createElement("section");
+  sec.className="facade"; sec.dataset.fi=fi;
+  const optsHtml=finishes.map((f,i)=>`<option value="${i}"${i===fac.material?" selected":""}>${escapeHtml(f.name)}</option>`).join("");
+  sec.innerHTML=`
+    <div class="facade-head">
+      <div class="fac-no">Вид фасада № ${fi+1}</div>
+      <div class="field big" style="flex:2 1 320px">
+        <label>Наименование фасада</label>
+        <input class="fac-name" type="text" placeholder="Например: Фасад кухонный, RAL 9003" value="${escapeAttr(fac.name)}" autocomplete="off">
+      </div>
+      <div class="field" style="flex:1 1 240px">
+        <label>Тип отделки (цена — из прайса)</label>
+        <select class="fac-mat">${optsHtml}</select>
+      </div>
+      ${state.facades.length>1?`<button class="fac-del no-print" title="Удалить вид фасада">✕</button>`:``}
+    </div>
+    <table class="grid">
+      <colgroup>
+        <col class="c-num">
+        <col class="c-name">
+        <col class="c-h"><col class="c-w"><col class="c-t"><col class="c-q">
+        <col class="c-o">
+        <col class="c-a"><col class="c-p"><col class="c-s">
+        <col class="c-del no-print">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>№</th>
+          <th class="left">Наименование</th>
+          <th>Высота, мм</th><th>Ширина, мм</th><th>Толщ., мм</th><th>Кол-во, шт</th>
+          <th title="Покраска с обратной стороны">Обратка</th>
+          <th>Площадь, м²</th><th>Цена, ₽/м²</th><th>Сумма, ₽</th>
+          <th class="no-print"></th>
+        </tr>
+      </thead>
+      <tbody class="fac-rows"></tbody>
+    </table>
+    <div class="add-row no-print">
+      <button class="btn ghost addRowBtn">＋ Добавить строку <span style="color:var(--muted);font-size:11px">(или Enter в последней строке)</span></button>
+    </div>
+    <div class="fac-sub">
+      <div class="s-item"><div class="lbl">Площадь</div><div class="val sub-area">0 м²</div></div>
+      <div class="s-item"><div class="lbl">Штук</div><div class="val sub-qty">0</div></div>
+      <div class="s-item"><div class="lbl">Сумма по виду</div><div class="val sub-sum">0 ₽</div><div class="note sub-note"></div></div>
+    </div>`;
+  fillRows(sec,fac,fi);
+  return sec;
+}
+function fillRows(sec,fac,fi){
+  const tb=sec.querySelector(".fac-rows"); tb.innerHTML="";
+  fac.rows.forEach((r,i)=>tb.appendChild(buildRow(fac,fi,r,i)));
+  updateFacadeSub(sec,fac);
+}
+function buildRow(fac,fi,r,i){
+  const c=rowCalc(fac,r);
+  const tr=document.createElement("tr");
+  tr.className=(c.hasData?"":"empty")+(r.back?" row-back":"");
+  const nameVal=r.nameAuto?autoName(fac):r.name;
+  tr.innerHTML=`
+    <td class="num">${i+1}</td>
+    <td><input class="cell name" data-fi="${fi}" data-i="${i}" data-f="name" data-col="0" type="text" value="${escapeAttr(nameVal)}" placeholder="${escapeAttr(autoName(fac))}"></td>
+    <td><input class="cell" data-fi="${fi}" data-i="${i}" data-f="h"   data-col="1" inputmode="numeric" value="${escapeAttr(r.h)}"></td>
+    <td><input class="cell" data-fi="${fi}" data-i="${i}" data-f="w"   data-col="2" inputmode="numeric" value="${escapeAttr(r.w)}"></td>
+    <td><input class="cell" data-fi="${fi}" data-i="${i}" data-f="t"   data-col="3" inputmode="numeric" value="${escapeAttr(r.t)}"></td>
+    <td><input class="cell" data-fi="${fi}" data-i="${i}" data-f="qty" data-col="4" inputmode="numeric" value="${escapeAttr(r.qty)}"></td>
+    <td class="chk"><input type="checkbox" class="backChk" data-fi="${fi}" data-i="${i}"${r.back?" checked":""} title="Покраска с обратной стороны"></td>
+    <td class="calc a">${c.areaTotal?fmt2(c.areaTotal):"—"}</td>
+    <td class="calc p">${c.unit?fmt(c.unit):"—"}</td>
+    <td class="calc sum s">${c.sum?fmt(c.sum):"—"}</td>
+    <td class="del no-print"><button class="row-del" data-del="${i}" title="Удалить строку">×</button></td>`;
+  return tr;
+}
+function updateRow(fi,i){
+  const sec=$(`.facade[data-fi="${fi}"]`); if(!sec) return;
+  const fac=state.facades[fi], r=fac.rows[i], c=rowCalc(fac,r);
+  const tr=sec.querySelectorAll(".fac-rows > tr")[i]; if(!tr) return;
+  tr.classList.toggle("empty",!c.hasData);
+  tr.classList.toggle("row-back",!!r.back);
+  tr.querySelector(".a").textContent=c.areaTotal?fmt2(c.areaTotal):"—";
+  tr.querySelector(".p").textContent=c.unit?fmt(c.unit):"—";
+  tr.querySelector(".s").textContent=c.sum?fmt(c.sum):"—";
+  updateFacadeSub(sec,fac); renderGrandTotals();
+}
+function updateFacadeSub(sec,fac){
+  const t=facadeTotals(fac);
+  sec.querySelector(".sub-area").textContent=fmt2(t.area)+" м²";
+  sec.querySelector(".sub-qty").textContent=fmt(t.qty);
+  sec.querySelector(".sub-sum").textContent=fmt(t.billed)+" ₽";
+  sec.querySelector(".sub-note").textContent=t.minApplied?`учтена мин. площадь ${fmt2(opts.minArea)} м²`:"";
+}
+function computeTotals(){
+  let area=0,sum=0,qty=0;
+  state.facades.forEach(fac=>{ const t=facadeTotals(fac); area+=t.area; sum+=t.billed; qty+=t.qty; });
+  return {area,sum,qty};
+}
+function renderGrandTotals(){
+  const {area,sum,qty}=computeTotals();
+  $("#totFac").textContent=state.facades.length;
+  $("#totArea").textContent=fmt2(area)+" м²";
+  $("#totQty").textContent=fmt(qty);
+  $("#totSum").textContent=fmt(sum)+" ₽";
+  $("#custSum").textContent=fmt(sum)+" ₽";
+  $("#custName").textContent=state.docName||"—";
+  $("#custPhone").textContent=state.phone||"—";
+  $("#docNo").textContent=state.docNo; $("#docDate").textContent=state.date;
+}
+
+/* ===== правка ===== */
+function ensureTrailingRow(fac){ const c=rowCalc(fac,fac.rows[fac.rows.length-1]); if(c.hasData) fac.rows.push(blankRow()); }
+function onCellInput(inp){
+  const fi=+inp.dataset.fi, i=+inp.dataset.i, f=inp.dataset.f;
+  const fac=state.facades[fi], r=fac.rows[i];
+  if(f==="name"){ const v=inp.value; if(v.trim()===""){ r.name=""; r.nameAuto=true; } else { r.name=v; r.nameAuto=false; } }
+  else r[f]=inp.value;
+  updateRow(fi,i);
+  const wasLast=(i===fac.rows.length-1); ensureTrailingRow(fac);
+  if(wasLast&&fac.rows.length>i+1){ const sec=$(`.facade[data-fi="${fi}"]`); fillRows(sec,fac,fi); focusCell(fi,i,+inp.dataset.col); }
+  document.title="СРЕДА · "+(state.docName||"расчёт"); scheduleSave();
+}
+function focusCell(fi,row,col){ const inp=$(`.facade[data-fi="${fi}"] .cell[data-i="${row}"][data-col="${col}"]`); if(inp){ inp.focus(); inp.select&&inp.select(); } }
+function onCellKey(e){
+  const inp=e.target; if(!inp.classList||!inp.classList.contains("cell")) return;
+  const fi=+inp.dataset.fi, i=+inp.dataset.i, col=+inp.dataset.col, fac=state.facades[fi];
+  const atStart=inp.selectionStart===0&&inp.selectionEnd===0;
+  const atEnd=inp.selectionStart===inp.value.length&&inp.selectionEnd===inp.value.length;
+  let handled=true;
+  switch(e.key){
+    case "ArrowDown":
+      if(i<fac.rows.length-1) focusCell(fi,i+1,col);
+      else{ ensureTrailingRow(fac); fillRows($(`.facade[data-fi="${fi}"]`),fac,fi); focusCell(fi,i+1,col); scheduleSave(); } break;
+    case "ArrowUp": if(i>0) focusCell(fi,i-1,col); else handled=false; break;
+    case "Enter":
+      if(i<fac.rows.length-1) focusCell(fi,i+1,col);
+      else{ fac.rows.push(blankRow()); fillRows($(`.facade[data-fi="${fi}"]`),fac,fi); focusCell(fi,i+1,col); scheduleSave(); } break;
+    case "ArrowRight": if(atEnd&&col<4) focusCell(fi,i,col+1); else handled=false; break;
+    case "ArrowLeft":  if(atStart&&col>0) focusCell(fi,i,col-1); else handled=false; break;
+    default: handled=false;
+  }
+  if(handled) e.preventDefault();
+}
+
+/* ===== список 10 последних (индекс по свежести) ===== */
+function readIndex(){ try{ return JSON.parse(localStorage.getItem(LS_INDEX))||[]; }catch(e){ return []; } }
+function writeIndex(ix){ try{ localStorage.setItem(LS_INDEX,JSON.stringify(ix)); }catch(e){} }
+function ensureIndex(){
+  let ix=readIndex();
+  if(!ix.length){
+    const arr=[];
+    for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i);
+      if(k&&k.startsWith(LS_PREFIX)){ const nm=k.slice(LS_PREFIX.length); let ts=0;
+        try{ ts=(JSON.parse(localStorage.getItem(k))||{}).savedAt||0; }catch(e){}
+        arr.push({name:nm,ts}); } }
+    arr.sort((a,b)=>b.ts-a.ts);
+    arr.slice(MAX_RECENT).forEach(e=>localStorage.removeItem(LS_PREFIX+e.name)); // держим только 10
+    ix=arr.slice(0,MAX_RECENT); writeIndex(ix);
+  }
+}
+
+/* ===== автосохранение (память: 10 последних) ===== */
+let saveTimer=null;
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(persist,400); }
+function persist(){
+  const name=(state.docName||"").trim(); if(!name){ flagSaved(""); return; }
+  currentName=name; state.savedAt=Date.now();
+  try{
+    localStorage.setItem(LS_PREFIX+name,JSON.stringify(state));
+    let ix=readIndex().filter(e=>e.name!==name);
+    ix.unshift({name,ts:state.savedAt});
+    while(ix.length>MAX_RECENT){ const rm=ix.pop(); if(rm.name!==name) localStorage.removeItem(LS_PREFIX+rm.name); }
+    writeIndex(ix);
+    flagSaved("Сохранено ✓"); refreshLoadList();
+  }catch(e){ flagSaved("Ошибка сохранения"); }
+}
+function flagSaved(t){ const f=$("#savedFlag"); f.textContent=t; f.classList.toggle("show",t.includes("✓"));
+  if(t.includes("✓")) setTimeout(()=>{f.textContent="";f.classList.remove("show");},1800); }
+function refreshLoadList(){
+  const sel=$("#loadSelect"); const ix=readIndex().filter(e=>localStorage.getItem(LS_PREFIX+e.name)!=null);
+  sel.innerHTML=`<option value="">Открыть расчёт…</option>`+ix.map(e=>`<option value="${escapeAttr(e.name)}"${e.name===currentName?" selected":""}>${escapeHtml(e.name)}</option>`).join("");
+}
+function migrate(s){
+  // старый формат (одна таблица) -> facades[]
+  if(s && !s.facades && s.rows){
+    s.facades=[{name:s.facadeName||"",material:s.material||0,rows:s.rows.map(r=>({name:r.name||"",nameAuto:!(r.name&&r.name.trim()),h:r.h||"",w:r.w||"",t:r.t||"",qty:r.qty||"",back:false}))}];
+    delete s.rows; delete s.facadeName; delete s.material;
+  }
+  if(s.phone===undefined||s.phone==="") s.phone="+7";
+  if(!s.facades||!s.facades.length) s.facades=[blankFacade()];
+  s.facades.forEach(f=>{ if(!f.rows||!f.rows.length) f.rows=[blankRow()]; f.rows.forEach(r=>{ if(r.nameAuto===undefined) r.nameAuto=!(r.name&&r.name.trim()); if(r.back===undefined) r.back=false; }); });
+  return s;
+}
+function loadDoc(name){
+  try{ const raw=localStorage.getItem(LS_PREFIX+name); if(!raw) return;
+    state=migrate(JSON.parse(raw)); currentName=name;
+    $("#docName").value=state.docName||""; $("#docPhone").value=state.phone||"+7"; renderFacades(); document.title="СРЕДА · "+name;
+  }catch(e){}
+}
+
+/* ===== сохранить файл (самодостаточный .html документ) ===== */
+async function saveDocumentFile(){
+  const name=(state.docName||"raschet").trim();
+  const payload=JSON.stringify({v:1,state,finishes,opts}).replace(/<\/script>/gi,"<\\/script>");
+  const clone=document.documentElement.cloneNode(true);
+  const dataEl=clone.querySelector("#embedded-data"); if(dataEl) dataEl.textContent=payload;
+  const html="<!DOCTYPE html>\n"+clone.outerHTML;
+  const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+  const fname=(name||"raschet").replace(/[^\wа-яёА-ЯЁ .\-]/gi,"_")+".html";
+  if(window.showSaveFilePicker){
+    try{
+      const handle=await window.showSaveFilePicker({suggestedName:fname,types:[{description:"HTML документ",accept:{"text/html":[".html"]}}]});
+      const w=await handle.createWritable(); await w.write(blob); await w.close();
+      flagSaved("Файл сохранён ✓"); return;
+    }catch(e){ if(e&&e.name==="AbortError") return; }
+  }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fname; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  flagSaved("Файл сохранён ✓");
+}
+
+/* ===== Печать: бланк заказа + договор (два PDF) ===== */
+function buildContractHtml(){
+  const {sum}=computeTotals();
+  const name=(state.docName||"").trim()||"____________________";
+  const phone=(state.phone||"").trim()||"____________________";
+  const no=state.docNo||"____";
+  const dp=dateParts(state.date);
+  const sumStr=fmt(sum)+" ₽";
+  const E=escapeHtml;
+  return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Договор № ${E(no)} — ${E(name)}</title>
+<style>
+  @page{size:A4;margin:16mm}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Times New Roman",Georgia,serif;font-size:12px;line-height:1.5;color:#111}
+  h1{font-size:15px;text-align:center;margin:0 0 2px;text-transform:uppercase;letter-spacing:.02em}
+  .sub{text-align:center;margin:0 0 14px}
+  .row{display:flex;justify-content:space-between;margin:0 0 14px}
+  p{margin:0 0 9px;text-align:justify}
+  .cl{font-weight:bold}
+  .req{margin-top:16px;display:flex;gap:30px;justify-content:space-between}
+  .req .col{width:48%}
+  .req b{display:block;margin-bottom:3px}
+  .sign{margin-top:22px}
+  .muted{color:#333}
+  .sum{font-weight:bold}
+  hr{border:none;border-top:1px solid #999;margin:14px 0}
+</style></head><body>
+  <h1>Договор № ${E(no)}</h1>
+  <div class="sub">на оказание услуг</div>
+  <div class="row"><span>г. Новороссийск</span><span>«${E(dp.d)}» ${E(dp.month)} ${E(dp.y)} г.</span></div>
+
+  <p><b>ИП Малюга Александр Сергеевич</b> (Исполнитель) и <b>${E(name)}</b> (ФИО Заказчика),
+  именуемые «Стороны», заключили договор о нижеследующем:</p>
+
+  <p><span class="cl">1. Предмет.</span> Исполнитель оказывает услуги: распил и кромление ЛДСП/фанеры,
+  изготовление фасадов из МДФ и шпона. Объём и характеристики — в смете расчёта стоимости материалов и услуг.</p>
+
+  <p><span class="cl">2. Цена.</span> Стоимость определяется по смете расчёта стоимости материалов и услуг
+  (неотъемлемая часть договора) и составляет <span class="sum">${E(sumStr)}</span>.
+  Оплата в течение 2-х рабочих дней с даты просчёта. Дата оплаты — дата зачисления средств.</p>
+
+  <p><span class="cl">3. Срок и приёмка.</span> Срок оказания услуг — 10 рабочих дней. Приёмка — по Акту сдачи-приёмки.
+  Если в течение 3 рабочих дней Заказчик не направил мотивированные возражения, услуги считаются принятыми.
+  При недостатках Исполнитель устраняет их в разумный срок либо стоимость уменьшается соразмерно.</p>
+
+  <p><span class="cl">4. Права и обязанности.</span> Исполнитель обязан оказать услуги надлежащего качества в срок,
+  вправе привлекать третьих лиц с сохранением ответственности. Заказчик обязан предоставить исходные данные/материалы
+  (если применимо) и своевременно оплатить услуги.</p>
+
+  <p><span class="cl">5. Ответственность сторон за просрочку.</span></p>
+  <p>5.1. За просрочку оказания услуг Исполнитель уплачивает Заказчику пеню в размере 0,1 % от стоимости неоказанных услуг
+  за каждый день просрочки — со дня, следующего за установленным сроком, до дня фактического исполнения включительно.</p>
+  <p>5.2. За просрочку оплаты Заказчик уплачивает Исполнителю пеню в размере 0,1 % от неоплаченной суммы за каждый день
+  просрочки — со дня, следующего за сроком оплаты, до дня поступления средств включительно.</p>
+  <p>5.3. Сторона освобождается от ответственности, если докажет, что просрочка произошла не по её вине либо из-за
+  обстоятельств непреодолимой силы. При наступлении таких обстоятельств сторона обязана уведомить другую сторону
+  в письменной форме в течение 3 рабочих дней.</p>
+  <p>5.4. Одновременно с неустойкой проценты по ст. 395 ГК РФ при просрочке денежного обязательства не начисляются.</p>
+
+  <p><span class="cl">6. Прочие условия.</span> Конфиденциальность, срок действия до полного исполнения, расторжение по соглашению
+  либо с уведомлением за ___ календарных дней. Споры — через переговоры, затем в суде по месту нахождения ответчика.
+  Изменения — только письменно. Сообщения по e-mail из реквизитов имеют юридическую силу.</p>
+
+  <hr>
+  <div class="cl">Реквизиты сторон</div>
+  <div class="req">
+    <div class="col muted">
+      <b>Исполнитель: ИП Малюга А. С.</b>
+      Адрес: 353919, Краснодарский край, г. Новороссийск, ул. Куникова, д. 55, к. 2<br>
+      ИНН: 231536618490, ОГРНИП: 323237500486910<br>
+      Р/с: 40802810926280005462<br>
+      Банк: Филиал «Ростовский» АО «Альфа-Банк», БИК: 046015207<br>
+      E-mail: aleksandr.maliuga@yandex.ru<br>
+      Телефон: +7 (988) 319-39-14
+      <div class="sign">Подпись: _________________ /Малюга А. С./</div>
+    </div>
+    <div class="col">
+      <b>Заказчик:</b>
+      ФИО: ${E(name)}<br>
+      Адрес: _________________________<br>
+      E-mail: _____________________<br>
+      Телефон: ${E(phone)}
+      <div class="sign">Подпись: _________________ /______________/</div>
+      <div style="margin-top:10px">«${E(dp.d)}» ${E(dp.month)} ${E(dp.y)} г.</div>
+      <div style="margin-top:6px">М.П.</div>
+    </div>
+  </div>
+</body></html>`;
+}
+function printContract(){
+  const html=buildContractHtml();
+  const f=document.createElement("iframe");
+  f.setAttribute("aria-hidden","true");
+  f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+  document.body.appendChild(f);
+  const d=f.contentWindow.document; d.open(); d.write(html); d.close();
+  setTimeout(()=>{ try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){} setTimeout(()=>f.remove(),2000); },350);
+}
+function printOrderAndContract(){
+  window.print();                 // 1-й файл: бланк заказа
+  setTimeout(printContract,500);  // 2-й файл: договор
+}
+
+/* ===== прайс-панель ===== */
+function renderPricePanel(){
+  const mk=$("#makeRows"), fl=$("#flatRows");
+  mk.innerHTML=finishes.map((f,i)=>f.cat!=="make"?"":`
+    <tr>
+      <td><input class="nm" data-pi="${i}" data-f="name" type="text" value="${escapeAttr(f.name)}"></td>
+      <td class="r"><input class="pr" data-pi="${i}" data-tk="16" type="number" min="0" value="${f.t["16"]||0}"></td>
+      <td class="r"><input class="pr" data-pi="${i}" data-tk="19" type="number" min="0" value="${f.t["19"]||0}"></td>
+      <td class="r"><input class="pr" data-pi="${i}" data-tk="22" type="number" min="0" value="${f.t["22"]||0}"></td>
+      <td class="no-print"><button class="row-del" data-delf="${i}" title="Удалить">×</button></td>
+    </tr>`).join("");
+  fl.innerHTML=finishes.map((f,i)=>f.cat!=="flat"?"":`
+    <tr>
+      <td><input class="nm" data-pi="${i}" data-f="name" type="text" value="${escapeAttr(f.name)}"></td>
+      <td class="r"><input class="pr" data-pi="${i}" data-f="flat" type="number" min="0" value="${f.flat||0}"></td>
+      <td class="c"><input type="checkbox" data-pi="${i}" data-f="veneer"${f.veneer?" checked":""} title="Обратка по цене шпона"></td>
+      <td class="no-print"><button class="row-del" data-delf="${i}" title="Удалить">×</button></td>
+    </tr>`).join("");
+  $("#obrPaint").value=opts.obrPaint; $("#obrVeneer").value=opts.obrVeneer;
+  $("#minArea").value=opts.minArea; $("#markup").value=opts.markup;
+}
+function refreshAllMatSelects(){
+  state.facades.forEach((fac,fi)=>{
+    const sel=$(`.facade[data-fi="${fi}"] .fac-mat`); if(!sel) return;
+    sel.innerHTML=finishes.map((f,i)=>`<option value="${i}"${i===fac.material?" selected":""}>${escapeHtml(f.name)}</option>`).join("");
+  });
+}
+
+/* ===== init ===== */
+function init(){
+  loadPrices();
+  // если файл сохранён как документ — подставить встроенные данные
+  let embedded=null;
+  const de=document.getElementById("embedded-data");
+  if(de&&de.textContent.trim()){ try{ embedded=JSON.parse(de.textContent); }catch(e){} }
+  if(embedded&&embedded.state){
+    if(embedded.finishes) finishes=embedded.finishes;
+    if(embedded.opts) opts={...DEF,...embedded.opts};
+    state=migrate(embedded.state); currentName=(state.docName||"").trim();
+  }else{
+    state=blankState();
+  }
+  ensureIndex();
+  $("#docName").value=state.docName||""; $("#docPhone").value=state.phone||"+7";
+  renderFacades(); renderPricePanel(); refreshLoadList();
+
+  $("#docName").addEventListener("input",e=>{ state.docName=e.target.value; renderGrandTotals(); document.title="СРЕДА · "+(e.target.value||"расчёт"); scheduleSave(); });
+  $("#docPhone").addEventListener("input",e=>{ state.phone=e.target.value; renderGrandTotals(); scheduleSave(); });
+  $("#docPhone").addEventListener("focus",e=>{ if(!e.target.value) e.target.value=state.phone="+7"; });
+
+  // делегирование по блокам фасадов
+  const box=$("#facades");
+  box.addEventListener("input",e=>{
+    const t=e.target;
+    if(t.classList.contains("cell")) onCellInput(t);
+    else if(t.classList.contains("fac-name")){ const fi=+t.closest(".facade").dataset.fi; state.facades[fi].name=t.value; const sec=t.closest(".facade"); fillRows(sec,state.facades[fi],fi); renderGrandTotals(); scheduleSave(); }
+  });
+  box.addEventListener("change",e=>{
+    const t=e.target;
+    if(t.classList.contains("fac-mat")){ const fi=+t.closest(".facade").dataset.fi; state.facades[fi].material=+t.value; const sec=t.closest(".facade"); fillRows(sec,state.facades[fi],fi); renderGrandTotals(); scheduleSave(); }
+    else if(t.classList.contains("backChk")){ const fi=+t.dataset.fi,i=+t.dataset.i; state.facades[fi].rows[i].back=t.checked; updateRow(fi,i); scheduleSave(); }
+  });
+  box.addEventListener("keydown",onCellKey);
+  box.addEventListener("click",e=>{
+    const sec=e.target.closest(".facade"); if(!sec) return; const fi=+sec.dataset.fi;
+    if(e.target.classList.contains("addRowBtn")||e.target.closest(".addRowBtn")){ state.facades[fi].rows.push(blankRow()); fillRows(sec,state.facades[fi],fi); focusCell(fi,state.facades[fi].rows.length-1,0); scheduleSave(); return; }
+    const del=e.target.closest("[data-del]"); if(del){ state.facades[fi].rows.splice(+del.dataset.del,1); if(!state.facades[fi].rows.length) state.facades[fi].rows.push(blankRow()); fillRows(sec,state.facades[fi],fi); renderGrandTotals(); scheduleSave(); return; }
+    if(e.target.classList.contains("fac-del")){ state.facades.splice(fi,1); if(!state.facades.length) state.facades.push(blankFacade()); renderFacades(); scheduleSave(); return; }
+  });
+
+  $("#addFacadeBtn").addEventListener("click",()=>{ state.facades.push(blankFacade()); renderFacades(); scheduleSave(); const secs=document.querySelectorAll(".facade"); const last=secs[secs.length-1]; const nm=last&&last.querySelector(".fac-name"); if(nm) nm.focus(); });
+
+  // прайс
+  $("#makeRows").addEventListener("input",onPriceEdit);
+  $("#flatRows").addEventListener("input",onPriceEdit);
+  $("#flatRows").addEventListener("change",e=>{ if(e.target.dataset.f==="veneer"){ finishes[+e.target.dataset.pi].veneer=e.target.checked; savePrices(); refreshAllRowsCalc(); } });
+  document.querySelectorAll("#makeRows,#flatRows").forEach(tb=>tb.addEventListener("click",e=>{
+    const d=e.target.closest("[data-delf]"); if(!d) return;
+    const idx=+d.dataset.delf; finishes.splice(idx,1);
+    state.facades.forEach(f=>{ if(f.material>=finishes.length) f.material=0; else if(f.material>idx) f.material--; });
+    savePrices(); renderPricePanel(); refreshAllMatSelects(); refreshAllRowsCalc();
+  }));
+  ["obrPaint","obrVeneer","minArea","markup"].forEach(id=>$("#"+id).addEventListener("input",e=>{ opts[id]=num(e.target.value); savePrices(); refreshAllRowsCalc(); }));
+  $("#addMakeBtn").addEventListener("click",()=>{ finishes.push({name:"Новая отделка",cat:"make",t:{"16":0,"19":0,"22":0}}); savePrices(); renderPricePanel(); refreshAllMatSelects(); });
+  $("#addFlatBtn").addEventListener("click",()=>{ finishes.push({name:"Новая отделка",cat:"flat",flat:0,veneer:false}); savePrices(); renderPricePanel(); refreshAllMatSelects(); });
+  $("#resetPriceBtn").addEventListener("click",()=>{ finishes=defFinishes(); opts={...DEF}; savePrices(); renderPricePanel(); state.facades.forEach(f=>{ if(f.material>=finishes.length) f.material=0; }); refreshAllMatSelects(); refreshAllRowsCalc(); });
+
+  // тулбар
+  $("#printBtn").addEventListener("click",printOrderAndContract);
+  $("#saveBtn").addEventListener("click",saveDocumentFile);
+  $("#newBtn").addEventListener("click",()=>{ state=blankState(); currentName=""; $("#docName").value=""; $("#docPhone").value=state.phone; renderFacades(); $("#loadSelect").value=""; document.title="СРЕДА · Расчёт фасадов"; $("#docName").focus(); });
+  $("#loadSelect").addEventListener("change",e=>{ if(e.target.value) loadDoc(e.target.value); });
+}
+function onPriceEdit(e){
+  const inp=e.target, pi=+inp.dataset.pi; if(isNaN(pi)) return;
+  if(inp.dataset.tk) finishes[pi].t[inp.dataset.tk]=num(inp.value);
+  else if(inp.dataset.f==="flat") finishes[pi].flat=num(inp.value);
+  else if(inp.dataset.f==="name") finishes[pi].name=inp.value;
+  savePrices(); refreshAllMatSelects(); refreshAllRowsCalc();
+}
+function refreshAllRowsCalc(){ state.facades.forEach((fac,fi)=>{ const sec=$(`.facade[data-fi="${fi}"]`); if(sec) fillRows(sec,fac,fi); }); renderGrandTotals(); }
+
+document.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
+</html>

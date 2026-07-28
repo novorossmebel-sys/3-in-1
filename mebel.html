@@ -1,0 +1,2686 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор себестоимости изделия — СРЕДА (внутренний)</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2048%2048%27%3E%3Crect%20width%3D%2748%27%20height%3D%2748%27%20rx%3D%2710%27%20fill%3D%27%2320180F%27/%3E%3Ctext%20x%3D%2724%27%20y%3D%2734%27%20font-family%3D%27Georgia%2Cserif%27%20font-size%3D%2730%27%20fill%3D%27%23F4EEE3%27%20text-anchor%3D%27middle%27%3E%D0%A1%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bone:#F4EEE3;
+  --bone-2:#FBF7EF;
+  --cream:#EFE6D6;
+  --espresso:#20180F;
+  --espresso-2:#2C2116;
+  --ink:#1E1710;
+  --walnut:#6A4A2E;
+  --oak:#B98A54;
+  --brass:#B08444;
+  --brass-lt:#C79C5C;
+  --line:#D9CDB8;
+  --good:#3E6B4F;
+  --bad:#A94438;
+  --f-display:'Georgia',serif;
+  --f-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--f-sans);
+  background:var(--bone);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.5;
+  padding-bottom:140px;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 20px}
+header{margin-bottom:20px}
+h1{font-family:var(--f-display);font-size:22px;font-weight:700;color:var(--espresso)}
+.sub{color:var(--walnut);font-size:13px;margin-top:4px}
+
+.card{
+  background:var(--bone-2);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:18px 20px;
+  margin-bottom:16px;
+}
+.card h2{font-size:15px;font-weight:700;color:var(--espresso);margin-bottom:2px}
+.card .hint{font-size:12px;color:var(--walnut);margin-bottom:12px}
+
+.card-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+.card table{width:100%;border-collapse:collapse;font-size:13px}
+.card th{
+  text-align:left;font-weight:600;color:var(--walnut);
+  font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  padding:6px 8px;border-bottom:1px solid var(--line);
+}
+.card td{padding:5px 8px;border-bottom:1px solid #EAE1CE;vertical-align:middle}
+.card tr:last-child td{border-bottom:none}
+.card tfoot td{font-weight:700;border-top:1px solid var(--line);border-bottom:none;padding-top:8px}
+
+input[type=number],input[type=text]{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:6px 8px;
+  font-size:13px;
+  font-family:inherit;
+  background:#fff;
+  color:var(--ink);
+}
+input[type=number]{width:90px}
+input:focus{outline:2px solid var(--brass-lt);outline-offset:-1px}
+input.input-invalid{border-color:var(--bad)}
+input[readonly]{background:var(--cream);color:var(--walnut);border-color:transparent}
+.num-col{width:90px}
+.name-col{min-width:220px}
+.unit-col{width:70px}
+.sum-col{width:110px;text-align:right;white-space:nowrap}
+.auto-tag{font-size:10px;color:var(--brass);font-weight:700;margin-left:4px}
+/* Muted per-category tint for auto-quantity rows in the cost table —
+   distinguishes ЛДСП / Фасад / Кромление / Распиловка lines at a glance
+   without looking bright or fighting the row's own controls. */
+tr.row-auto-ldsp{background:#EAE1CF}
+tr.row-auto-facade{background:#DEE5DA}
+tr.row-auto-edge{background:#E2DEE8}
+tr.row-auto-cut{background:#E8DDD6}
+tr.row-auto-countertop{background:#D9E2E6}
+tr.row-auto-other{background:#E9E4DD}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:600;
+  padding:7px 14px;border-radius:5px;
+  border:1px solid var(--line);
+  background:#fff;color:var(--ink);
+  cursor:pointer;
+}
+.btn:hover{border-color:var(--oak)}
+.btn-primary{background:var(--espresso);color:var(--bone-2);border-color:var(--espresso)}
+.btn-primary:hover{background:var(--espresso-2)}
+.btn-danger{color:var(--bad);border-color:transparent;background:transparent;padding:4px 8px}
+.btn-danger:hover{background:#F6E4E0}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+.row-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+.settings-grid{display:flex;gap:24px;flex-wrap:wrap}
+.settings-grid label{display:block;font-size:12px;color:var(--walnut);margin-bottom:4px}
+.settings-grid .field{min-width:170px}
+
+.saves-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.save-chip{
+  display:flex;align-items:center;gap:8px;
+  background:var(--cream);border:1px solid var(--line);border-radius:20px;
+  padding:5px 6px 5px 14px;font-size:12px;
+}
+.save-chip button{border:none;background:transparent;cursor:pointer;color:var(--walnut);font-size:14px;line-height:1;padding:2px 4px}
+.save-chip button:hover{color:var(--bad)}
+.save-chip .load-btn{color:var(--espresso);font-weight:700;cursor:pointer}
+
+.summary-bar{
+  position:fixed;left:0;right:0;bottom:0;
+  background:var(--espresso);color:var(--bone-2);
+  border-top:3px solid var(--brass);
+  padding:16px 20px;
+  z-index:50;
+}
+.summary-inner{
+  max-width:1180px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.summary-inner .sub-line{font-size:12px;color:var(--brass-lt);opacity:.9}
+.summary-inner .sub-line span{color:var(--bone-2);font-weight:600}
+.total-price{font-family:var(--f-display);font-size:30px;font-weight:700;color:#fff}
+.total-price small{font-size:14px;font-weight:400;color:var(--brass-lt);margin-right:8px}
+
+.helper-note{font-size:12px;color:var(--walnut);margin-top:8px}
+.helper-note b{color:var(--espresso)}
+
+/* ---- Tabs ---- */
+.tabbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.tab{
+  display:flex;align-items:center;gap:4px;
+  padding:8px 6px 8px 14px;border-radius:7px 7px 0 0;
+  background:var(--cream);border:1px solid var(--line);border-bottom:none;
+  cursor:pointer;font-size:13px;font-weight:600;color:var(--walnut);
+}
+.tab.active{background:var(--bone-2);color:var(--espresso);box-shadow:0 -2px 0 var(--brass) inset}
+.tab input{border:none;background:transparent;font-weight:600;font-size:13px;color:inherit;width:auto;padding:2px 2px}
+.tab input:focus{outline:none}
+.tab-close{border:none;background:transparent;color:var(--walnut);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1}
+.tab-close:hover{color:var(--bad)}
+.tab-add{padding:8px 14px;border-radius:7px;border:1px dashed var(--line);background:transparent;cursor:pointer;color:var(--walnut);font-weight:700}
+.tab-add:hover{border-color:var(--oak);color:var(--espresso)}
+.tab-kp{margin-left:auto;background:var(--espresso);color:var(--bone-2);border-color:var(--espresso)}
+.tab-kp.active{background:var(--brass);border-color:var(--brass);color:#fff;box-shadow:none}
+
+/* ---- Egger picker ---- */
+.egger-row{display:flex;gap:6px;margin-top:6px}
+.egger-row select{
+  font-size:12px;padding:6px 6px;border:1px solid var(--line);border-radius:4px;
+  background:#fff;font-family:inherit;color:var(--ink);
+}
+.egger-row .decor-select{flex:1;min-width:0}
+.egger-row .thick-select{width:150px;flex:none}
+
+/* ---- KP card in product tab ---- */
+.img-upload-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.img-preview{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:none}
+.checklist-preview{
+  border:1px solid var(--line);border-radius:4px;padding:8px 10px;
+  font-size:13px;color:var(--ink);white-space:pre-line;min-height:20px;background:#fff;
+}
+.checklist-preview.empty{color:var(--walnut);font-style:italic}
+.kp-row-photo{display:flex;flex-direction:column;align-items:center;gap:4px}
+.kp-desc-checklist{font-size:12px;color:var(--ink);white-space:pre-line;margin-bottom:6px}
+.kp-desc-checklist:empty{display:none}
+textarea{
+  width:100%;border:1px solid var(--line);border-radius:4px;padding:8px;
+  font-family:inherit;font-size:13px;resize:vertical;min-height:70px;color:var(--ink);
+}
+
+/* ---- KP view ---- */
+.kp-view{background:#fff;border:1px solid var(--line);border-radius:8px;padding:36px;max-width:920px;margin:0 auto}
+.kp-brand{text-align:center;margin-bottom:14px;padding-bottom:14px;border-bottom:2px solid var(--espresso)}
+.kp-brand-name{font-family:var(--f-display);font-size:32px;font-weight:700;letter-spacing:.08em;color:var(--espresso)}
+.kp-brand-tag{font-size:12px;color:var(--brass-ink);letter-spacing:.03em;margin-top:2px}
+.kp-header{text-align:center;margin-bottom:6px}
+.kp-header h2{font-family:var(--f-display);font-size:22px}
+.kp-meta{font-size:12px;color:var(--walnut);text-align:center;margin-bottom:26px;line-height:1.8}
+input.kp-percent-input{width:34px;border:1px solid transparent;background:transparent;text-align:center;font-size:12px;color:inherit;padding:1px 2px;border-radius:4px}
+input.kp-percent-input:hover,input.kp-percent-input:focus{border-color:var(--line);background:var(--bone-2)}
+.kp-table{width:100%;border-collapse:collapse;margin-bottom:18px}
+.kp-table th{background:var(--cream);font-size:11px;text-transform:uppercase;padding:8px;text-align:left;border:1px solid var(--line)}
+.kp-table td{padding:8px;border:1px solid var(--line);font-size:13px;vertical-align:top}
+.kp-table .img-preview{width:170px;height:170px;object-fit:cover;border-radius:4px}
+.kp-table textarea{border:1px solid transparent;background:transparent;min-height:56px;padding:4px}
+.kp-table textarea:hover,.kp-table textarea:focus{border-color:var(--line);background:var(--bone-2)}
+.kp-totals{margin-left:auto;width:300px;font-size:14px}
+.kp-totals-row{display:flex;justify-content:space-between;padding:5px 0}
+.kp-totals-row.grand{font-weight:700;font-size:18px;border-top:1px solid var(--line);margin-top:6px;padding-top:10px}
+.kp-footer{margin-top:26px;font-size:12px;color:var(--walnut)}
+.kp-footer textarea{border:1px solid transparent;background:transparent;font-size:12px;color:var(--walnut);min-height:50px;padding:4px}
+.kp-footer textarea:hover,.kp-footer textarea:focus{border-color:var(--line);background:var(--bone-2)}
+.kp-actions{margin-top:24px;display:flex;gap:10px;justify-content:center}
+.kp-print-hint{font-size:11px;color:var(--walnut);text-align:center;margin-top:8px}
+
+@media print{
+  body{padding-bottom:0;background:#fff}
+  .no-print{display:none!important}
+  #productView{display:none!important}
+  .wrap{max-width:100%;padding:0}
+  .kp-view{border:none;padding:0;max-width:100%}
+  .kp-percent-input,.kp-table textarea,.kp-footer textarea{border:none!important;background:transparent!important}
+  .kp-table textarea::placeholder{color:transparent!important}
+  .kp-view,.kp-view *{color:#000!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="no-print">
+    <h1>Калькулятор себестоимости изделия</h1>
+    <div class="sub">Внутренний инструмент СРЕДА — на основе рабочей Excel-таблицы просчёта и прайса EGGER</div>
+  </header>
+
+  <div class="card no-print" id="docTitleCard">
+    <label style="display:block;font-size:12px;color:var(--walnut);margin-bottom:6px">
+      Название документа <span style="color:var(--bad)">*</span>
+    </label>
+    <input type="text" id="documentTitle" placeholder="Например: Кухня Ивановых, Заказ №123" required>
+    <div class="hint" style="margin-top:6px;margin-bottom:0">Обязательно для заполнения — используется в названии файлов при сохранении (Excel, HTML), дата добавляется автоматически.</div>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-sm" id="btnAutosave">Включить автосохранение…</button>
+      <span class="hint" id="autosaveStatus" style="margin:0"></span>
+    </div>
+  </div>
+
+  <div class="card no-print">
+    <div class="card-head">
+      <div>
+        <h2>Сохранённые КП</h2>
+        <div class="hint">Сохраняет весь набор вкладок-изделий целиком (например, под именем клиента). Хранится локально в этом браузере.</div>
+      </div>
+      <div class="row-actions">
+        <button class="btn btn-primary btn-sm" id="btnSaveAs">Сохранить как…</button>
+        <button class="btn btn-sm" id="btnReset">Новое КП</button>
+      </div>
+    </div>
+    <div class="saves-list" id="savesList"></div>
+  </div>
+
+  <div class="tabbar no-print" id="tabBar"></div>
+
+  <div id="productView">
+    <div class="card">
+      <h2>Фасады</h2>
+      <div class="hint">Высота и ширина каждой детали фасада, мм. Площадь считается автоматически и идёт в стоимость МДФ-фасада. Если типов фасада несколько — выбирайте нужный в колонке «Материал». В последней строке нажмите ↓ — появится новая строка.</div>
+      <table>
+        <thead><tr>
+          <th class="num-col">Высота, мм</th><th class="num-col">Ширина, мм</th><th class="num-col">Кол-во</th><th class="num-col">м²</th><th class="name-col">Материал</th><th></th>
+        </tr></thead>
+        <tbody id="facadeBody"></tbody>
+        <tfoot><tr><td colspan="3">Итого площадь фасадов</td><td id="facadeTotal" colspan="3">0 м²</td></tr></tfoot>
+      </table>
+      <div class="row-actions">
+        <button class="btn btn-sm" id="addFacade">+ Добавить деталь</button>
+        <button class="btn btn-sm" id="addFacadeMaterial">+ Ещё тип фасада</button>
+      </div>
+      <div class="helper-note" id="facadeBreakdown"></div>
+    </div>
+
+    <div class="card">
+      <h2>Корпус (детали из ЛДСП)</h2>
+      <div class="hint">Считает суммарную площадь (→ количество листов ЛДСП) и периметр кромки (→ погонные метры кромления). Если декоров ЛДСП несколько — выбирайте нужный в колонке «Материал». В последней строке нажмите ↓ — появится новая строка.</div>
+      <table>
+        <thead><tr>
+          <th class="num-col">Высота, мм</th><th class="num-col">Ширина, мм</th><th class="num-col">Кол-во</th><th class="num-col">м²</th><th class="num-col">мп кромки</th><th class="name-col">Материал</th><th class="num-col">Толщина</th><th></th>
+        </tr></thead>
+        <tbody id="carcassBody"></tbody>
+        <tfoot><tr><td colspan="3">Итого</td><td id="carcassAreaTotal">0 м²</td><td id="carcassEdgeTotal">0 мп</td><td></td><td></td><td></td></tr></tfoot>
+      </table>
+      <div class="row-actions">
+        <button class="btn btn-sm" id="addCarcass">+ Добавить деталь</button>
+        <button class="btn btn-sm" id="addLdspMaterial">+ Ещё декор ЛДСП</button>
+      </div>
+      <div class="helper-note">Нужно листов ЛДСП всего (при <b><span id="sheetAreaLabel"></span> м²</b> на лист): <b id="sheetsNeeded">0</b> — подставляется в таблицу статей затрат ниже.</div>
+      <div class="helper-note" id="carcassBreakdown"></div>
+    </div>
+
+    <div class="card">
+      <h2>Столешница</h2>
+      <div class="hint">Длина каждого отреза при стандартной ширине, мм. Если материалов столешницы несколько — выбирайте нужный в колонке «Материал»; кол-во плит в стоимости всё равно выставляйте вручную по подсказке ниже.</div>
+      <table>
+        <thead><tr>
+          <th class="num-col">Длина, мм</th><th class="num-col">Ширина, мм</th><th class="num-col">Кол-во</th><th class="num-col">пог.м</th><th class="name-col">Материал</th><th></th>
+        </tr></thead>
+        <tbody id="countertopBody"></tbody>
+        <tfoot><tr><td colspan="3">Итого погонных метров</td><td id="countertopTotal" colspan="3">0 м</td></tr></tfoot>
+      </table>
+      <div class="row-actions">
+        <button class="btn btn-sm" id="addCountertop">+ Добавить отрез</button>
+        <button class="btn btn-sm" id="addCountertopMaterial">+ Ещё столешница</button>
+      </div>
+      <div class="helper-note">Рекомендуемое кол-во плит всего (при длине плиты <b><span id="stockLenLabel"></span> м</b>): <b id="countertopPieces">0</b></div>
+      <div class="helper-note" id="countertopBreakdown"></div>
+    </div>
+
+    <div class="card">
+      <h2>Статьи затрат</h2>
+      <div class="hint">Первые позиции считаются автоматически из таблиц выше. У «ЛДСП» — декор/толщина из прайса EGGER, у «Фасад МДФ краска» — тип из прайса на фасады, у «Кромление (материал)» — декор/размер кромки EGGER, у «Кромление (работа)» — расценка на кромление из прайс-листа (подставляется автоматически под выбранный размер кромки). Остальное заполняйте под изделие. Стрелки ↑↓ — переход между строками (в последней строке ↓ создаёт новую); ←→ в полях «Кол-во»/«Цена» переключают между ними.</div>
+      <table>
+        <thead><tr>
+          <th style="width:36px" title="Показывать в комплектации КП">КП</th><th class="name-col">Наименование</th><th class="num-col">Кол-во</th><th class="unit-col">Ед.</th><th class="num-col">Цена, ₽</th><th class="sum-col">Сумма, ₽</th><th></th>
+        </tr></thead>
+        <tbody id="itemsBody"></tbody>
+        <tfoot>
+          <tr><td colspan="5">Подытог (себестоимость, без столешниц-подрядчика)</td><td class="sum-col" id="subtotal">0 ₽</td><td></td></tr>
+          <tr id="countertopFooterRow" style="display:none"><td colspan="5" id="countertopFooterLabel" style="color:var(--brass-ink)"></td><td class="sum-col" id="countertopFooterSum" style="color:var(--brass-ink)">0 ₽</td><td></td></tr>
+        </tfoot>
+      </table>
+      <div class="row-actions">
+        <button class="btn btn-sm" id="addItem">+ Добавить позицию</button>
+        <button class="btn btn-sm" id="btnDefaults">Сбросить цены к значениям по умолчанию</button>
+      </div>
+      <div class="hint" style="margin-top:8px;margin-bottom:0">Доп. декор ЛДСП, тип фасада или столешницу добавляйте кнопками в соответствующих таблицах размеров выше — там же сразу вводятся размеры деталей из этого материала.</div>
+      <div class="row-actions" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+        <button class="btn btn-primary" id="btnExportProductExcel">Сохранить как… (Excel, с формулами)</button>
+        <button class="btn" id="btnExportToolCopy">Скачать копию инструмента (HTML)</button>
+      </div>
+      <div class="hint" style="margin-top:6px;margin-bottom:0">Excel — просчёт этого изделия отдельным файлом, с живыми формулами для пересчёта под заказ. HTML — копия всего калькулятора с текущими вкладками и КП внутри: открывается в браузере как обычная страница, работает без интернета.</div>
+    </div>
+
+    <div class="card">
+      <h2>Настройки расчёта</h2>
+      <div class="settings-grid">
+        <div class="field">
+          <label>Коэффициент наценки (итог = себестоимость × К)</label>
+          <input type="number" id="markup" step="0.01" min="0" onfocus="this.select()">
+        </div>
+        <div class="field">
+          <label>Площадь листа ЛДСП, м²</label>
+          <input type="number" id="sheetArea" step="0.01" min="0.1" onfocus="this.select()">
+        </div>
+        <div class="field">
+          <label>Длина плиты столешницы, м</label>
+          <input type="number" id="stockLen" step="0.1" min="0.5" onfocus="this.select()">
+        </div>
+        <div class="field">
+          <label>Коэффициент для столешниц акрил/кварц (подрядчик)</label>
+          <input type="number" id="countertopMarkup" step="0.01" min="0" onfocus="this.select()">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Карточка для КП</h2>
+      <div class="hint">Отметьте галочкой «КП» нужные позиции в таблице статей затрат выше — они попадут в комплектацию. Фото и заметки — тоже попадут в автоматически формируемую вкладку «КП».</div>
+      <label style="display:block;font-size:12px;color:var(--walnut);margin-bottom:6px">Комплектация (из отмеченных позиций)</label>
+      <div id="kpChecklistPreview" class="checklist-preview">—</div>
+      <label style="display:block;font-size:12px;color:var(--walnut);margin:12px 0 6px">Доп. заметки (необязательно)</label>
+      <textarea id="kpNotesInput" placeholder="Зеркало в раме, доп. молдинг..."></textarea>
+      <div class="img-upload-row" style="margin-top:10px">
+        <img id="kpImagePreview" class="img-preview" alt="">
+        <input type="file" id="kpImageInput" accept="image/*">
+        <button class="btn btn-sm btn-danger" id="kpImageRemoveBtn" style="display:none">Удалить фото</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="kpView" class="kp-view" style="display:none">
+    <div class="kp-brand">
+      <div class="kp-brand-name">СРЕДА</div>
+      <div class="kp-brand-tag">мебель на заказ · собственное производство · Новороссийск</div>
+    </div>
+    <div class="kp-header">
+      <h2>Коммерческое предложение</h2>
+    </div>
+    <div class="kp-meta">
+      <div id="kpOrgName"></div>
+      <div id="kpAddress"></div>
+      <div id="kpRequisites"></div>
+    </div>
+    <table class="kp-table">
+      <thead><tr>
+        <th style="width:32px">№</th><th style="width:160px">Наименование</th><th>Описание</th><th style="width:190px">Изображение</th><th style="width:130px">Цена</th>
+      </tr></thead>
+      <tbody id="kpBody"></tbody>
+    </table>
+    <div class="kp-totals">
+      <div class="kp-totals-row grand"><span>Итого:</span><span id="kpGrandTotal">0 ₽</span></div>
+      <div class="kp-totals-row">
+        <span>Предоплата (<input type="number" id="kpPrepay" min="0" max="100" class="kp-percent-input">%):</span>
+        <span id="kpPrepaySum">0 ₽</span>
+      </div>
+      <div class="kp-totals-row"><span>Остаток:</span><span id="kpRestSum">0 ₽</span></div>
+    </div>
+    <div class="kp-footer">
+      <textarea id="kpFooterNote"></textarea>
+    </div>
+    <div class="kp-actions no-print">
+      <button class="btn btn-primary" id="btnPrint">Печать / Сохранить как PDF</button>
+      <button class="btn" id="btnExportExcel">Скачать Excel (.xlsx)</button>
+    </div>
+    <div class="kp-print-hint no-print">В диалоге печати выберите принтер «Сохранить как PDF», чтобы получить файл. Если сверху страницы печатаются дата и название документа — откройте «Ещё настройки» в диалоге печати и снимите галочку «Верхние и нижние колонтитулы» (это настройка браузера, не документа — достаточно один раз).</div>
+  </div>
+</div>
+
+<div class="summary-bar no-print" id="summaryBar">
+  <div class="summary-inner">
+    <div class="sub-line">
+      Себестоимость: <span id="barSubtotal">0 ₽</span> &nbsp;×&nbsp; коэффициент <span id="barMarkup">2.3</span>
+      <span id="barCountertopLine" style="display:none">&nbsp;&nbsp;+&nbsp; столешница (<span id="barCtMaterial"></span>): <span id="barCountertopTotal">0 ₽</span> — отдельной строкой в КП</span>
+    </div>
+    <div class="total-price"><small>Итоговая цена изделия</small><span id="barTotal">0 ₽</span></div>
+  </div>
+</div>
+
+<script id="appSeed" type="application/json"></script>
+<script>
+/* Доступ только через защищённую паролем страницу index.html.
+   Открыт напрямую (не во вкладке) и это оригинал (пустой appSeed) — уводим на вход.
+   Сохранённые копии инструмента (appSeed заполнен) открываются как обычно. */
+(function(){ if(window.top===window.self){ var s=document.getElementById('appSeed'); if(!s||!s.textContent.trim()){ location.replace('index.html'); } } })();
+const EGGER_LDSP = [{"code": "W960", "name": "Белый классический (НОВИНКА)", "struct": "ST7", "prices": {"8": 3920.0, "16": 3920.0, "18": 4980.0, "25": 6730.0}}, {"code": "W960", "name": "Белый классический (НОВИНКА)", "struct": "SM", "prices": {"8": 3920.0, "16": 3920.0, "18": 4980.0, "25": 6730.0}}, {"code": "W960", "name": "Белый классический (НОВИНКА) влагостойкий", "struct": "SM", "prices": {"16": 4740.0}}, {"code": "W980", "name": "Белый платиновый", "struct": "SM", "prices": {"8": 3990.0, "16": 3990.0, "25": 6370.0}}, {"code": "W980", "name": "Белый платиновый", "struct": "ST2", "prices": {"8": 3990.0, "16": 3990.0, "25": 6370.0}}, {"code": "W980", "name": "Белый платиновый (влагостойкий)", "struct": "SM", "prices": {"16": 4950.0}}, {"code": "W1000", "name": "Белый Премиум", "struct": "ST19", "prices": {"16": 5900.0}}, {"code": "W1000", "name": "Белый Премиум", "struct": "ST38", "prices": {"8": 7500.0, "16": 7150.0, "25": 9780.0}}, {"code": "W1000", "name": "Белый Премиум", "struct": "ST9", "prices": {"8": 4870.0, "16": 4950.0, "18": 5750.0, "25": 7750.0}}, {"code": "W1100", "name": "Альпина белая (Белый Альпийский)", "struct": "ST9", "prices": {"8": 5210.0, "16": 5210.0, "18": 5750.0, "25": 7640.0}}, {"code": "W1200", "name": "Фарфор Белый (НОВИНКА)", "struct": "ST9", "prices": {"8": 5040.0, "16": 5210.0, "25": 7270.0}}, {"code": "U104", "name": "Алебастр белый", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "25": 6250.0}}, {"code": "U113", "name": "Коттон бежевый", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "25": 7610.0}}, {"code": "U115", "name": "Карат бежевый (НОВИНКА)", "struct": "ST9", "prices": {"8": 5210.0, "16": 5210.0, "18": 5900.0, "25": 7600.0}}, {"code": "U125", "name": "Желтый песок (НОВИНКА)", "struct": "ST9", "prices": {"16": 6350.0}}, {"code": "U156", "name": "Бежевый песок", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5720.0, "25": 7450.0}}, {"code": "U163", "name": "Карри желтый", "struct": "ST9", "prices": {"16": 6350.0}}, {"code": "U201", "name": "Серая галька", "struct": "ST9", "prices": {"8": 5410.0, "16": 5210.0, "18": 5900.0, "25": 7600.0}}, {"code": "U211", "name": "Миндаль бежевый (НОВИНКА)", "struct": "ST9", "prices": {"8": 5610.0, "16": 5650.0}}, {"code": "U216", "name": "Камель бежевый", "struct": "ST9", "prices": {"8": 4850.0, "16": 4950.0, "18": 5720.0, "25": 7600.0}}, {"code": "U222", "name": "Крем бежевый", "struct": "ST9", "prices": {"8": 5410.0, "16": 5210.0, "25": 7860.0}}, {"code": "U311", "name": "Бургундский красный", "struct": "ST9", "prices": {"16": 5650.0}}, {"code": "U321", "name": "Красный китайский", "struct": "ST9", "prices": {"16": 6000.0}}, {"code": "U325", "name": "Розовый антик", "struct": "ST9", "prices": {"16": 5650.0}}, {"code": "U335", "name": "Красно-коричневый (НОВИНКА)", "struct": "ST9", "prices": {"16": 5650.0}}, {"code": "U350", "name": "Сиена оранж (НОВИНКА)", "struct": "ST9", "prices": {"16": 6350.0}}, {"code": "U502", "name": "Синий дымчатый (НОВИНКА)", "struct": "ST9", "prices": {"16": 5350.0}}, {"code": "U504", "name": "Альпийское озеро", "struct": "ST9", "prices": {"16": 5650.0}}, {"code": "U525", "name": "Делфт голубой", "struct": "ST9", "prices": {"16": 5650.0}}, {"code": "U540", "name": "Деним голубой", "struct": "ST9", "prices": {"16": 5650.0}}, {"code": "U604", "name": "Зелёный эвкалипт (НОВИНКА)", "struct": "ST9", "prices": {"16": 6100.0}}, {"code": "U630", "name": "Зелёный лимон (Лайм)", "struct": "ST9", "prices": {"16": 5650.0}}, {"code": "U636", "name": "Фьерд зеленый (НОВИНКА)", "struct": "ST9", "prices": {"16": 6350.0}}, {"code": "U638", "name": "Зелёный шалфей (НОВИНКА)", "struct": "ST9", "prices": {"16": 6100.0}}, {"code": "U665", "name": "Зелёный камень (НОВИНКА)", "struct": "ST9", "prices": {"16": 6100.0}}, {"code": "U699", "name": "Зеленый еловый (НОВИНКА)", "struct": "ST9", "prices": {"16": 6100.0}}, {"code": "U702", "name": "Кашемир серый", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5720.0, "25": 7730.0}}, {"code": "U705", "name": "Ангора серая", "struct": "ST9", "prices": {"8": 5310.0, "16": 5210.0, "18": 5900.0}}, {"code": "U707", "name": "Шёлк серый", "struct": "ST9", "prices": {"8": 5310.0, "16": 5210.0, "25": 7780.0}}, {"code": "U708", "name": "Светло-серый", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5720.0, "25": 7400.0}}, {"code": "U727", "name": "Серый камень", "struct": "ST9", "prices": {"8": 5310.0, "16": 5210.0, "25": 7660.0}}, {"code": "U732", "name": "Серый асфальт (пыльный)", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5720.0, "25": 7000.0}}, {"code": "U740", "name": "Серо-коричневый темный", "struct": "ST9", "prices": {"16": 5210.0}}, {"code": "U741", "name": "Лава серая", "struct": "ST9", "prices": {"16": 5210.0}}, {"code": "U748", "name": "Трюфель коричневый", "struct": "ST9", "prices": {"8": 5410.0, "16": 5210.0}}, {"code": "U750", "name": "Ярко-серый", "struct": "ST9", "prices": {"8": 5410.0, "16": 5210.0, "18": 5900.0, "25": 7620.0}}, {"code": "U763", "name": "Серый перламутровый", "struct": "ST9", "prices": {"8": 4970.0, "16": 4950.0, "25": 7660.0}}, {"code": "U767", "name": "Кубанит серый", "struct": "ST9", "prices": {"16": 5210.0}}, {"code": "U775", "name": "Серый дымчатый (Бело-серый)", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5720.0, "25": 7800.0}}, {"code": "U780", "name": "Серый монументальный", "struct": "ST9", "prices": {"16": 5210.0}}, {"code": "U788", "name": "Арктика серый", "struct": "ST9", "prices": {"8": 5410.0, "16": 5210.0, "25": 8030.0}}, {"code": "U818", "name": "Тёмно-коричневый", "struct": "ST9", "prices": {"16": 5900.0}}, {"code": "U830", "name": "Карамель нюд", "struct": "ST9", "prices": {"16": 5660.0}}, {"code": "U899", "name": "Нежный черный (космос серый)", "struct": "ST9", "prices": {"8": 5260.0, "16": 5210.0, "18": 5900.0, "25": 8000.0}}, {"code": "U960", "name": "Оникс серый", "struct": "ST9", "prices": {"8": 5410.0, "16": 5210.0, "25": 7840.0}}, {"code": "U961", "name": "Чёрный графит", "struct": "ST2/ST7", "prices": {"8": 5050.0, "16": 4950.0, "25": 7720.0}}, {"code": "U963", "name": "Диамант серый", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5720.0, "25": 7000.0}}, {"code": "U968", "name": "Серый уголь", "struct": "ST9", "prices": {"16": 5210.0, "25": 7640.0}}, {"code": "U998", "name": "Лес чёрный", "struct": "ST38", "prices": {"16": 7150.0}}, {"code": "U999", "name": "Чёрный", "struct": "ST2/ST7", "prices": {"8": 5050.0, "16": 4950.0, "18": 5720.0, "25": 6800.0}}, {"code": "U999", "name": "Чёрный", "struct": "ST19", "prices": {"16": 5900.0}}, {"code": "H1113", "name": "Дуб Канзас коричневый", "struct": "ST10", "prices": {"8": 5310.0, "16": 5210.0, "25": 7650.0}}, {"code": "H1142", "name": "Дуб Сакраменто коричневый (НОВИНКА)", "struct": "ST36", "prices": {"8": 7450.0, "16": 7390.0, "25": 9880.0}}, {"code": "H1145", "name": "Дуб Бардолино натуральный", "struct": "ST10", "prices": {"8": 4950.0, "16": 4950.0, "18": 5790.0, "25": 7860.0}}, {"code": "H1176", "name": "Дуб Галифакс белый", "struct": "ST37", "prices": {"8": 7680.0, "16": 7580.0, "25": 9690.0}}, {"code": "H1180", "name": "Дуб Галифакс натуральный", "struct": "ST37", "prices": {"8": 7680.0, "16": 7580.0, "18": 9300.0, "25": 9690.0}}, {"code": "H1181", "name": "Дуб Галифакс табак", "struct": "ST37", "prices": {"8": 7680.0, "16": 7580.0, "18": 9300.0, "25": 9690.0}}, {"code": "H1199", "name": "Дуб термо чёрно-коричневый", "struct": "ST12", "prices": {"16": 5210.0, "25": 8450.0}}, {"code": "H1223", "name": "Ясень Севилья (НОВИНКА)", "struct": "ST19", "prices": {"8": 6240.0, "16": 6250.0, "25": 9180.0}}, {"code": "H1225", "name": "Ясень Тронхейм (НОВИНКА)", "struct": "ST12", "prices": {"8": 5300.0, "16": 5200.0}}, {"code": "H1242", "name": "Акация Шеффилд натуральный (НОВИНКА)", "struct": "ST10", "prices": {"16": 6100.0, "25": 9210.0}}, {"code": "H1250", "name": "Ясень Наварра", "struct": "ST36", "prices": {"8": 7490.0, "16": 7390.0, "25": 9850.0}}, {"code": "H1277", "name": "Акация Лэйклэнд светлая", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5790.0, "25": 7000.0}}, {"code": "H1303", "name": "Дуб Бельмонт коричневый (НОВИНКА)", "struct": "ST12", "prices": {"16": 5650.0}}, {"code": "H1307", "name": "Орех Вармия коричневый (НОВИНКА)", "struct": "ST19", "prices": {"16": 6250.0}}, {"code": "H1312", "name": "Дуб Уайт-Ривер песочно-бежевый", "struct": "ST10", "prices": {"16": 5900.0}}, {"code": "H1313", "name": "Дуб Уайт-Ривер серо-коричневый", "struct": "ST10", "prices": {"16": 5900.0}}, {"code": "H1318", "name": "Дикий дуб натуральный", "struct": "ST10", "prices": {"8": 5260.0, "16": 5210.0, "25": 7970.0}}, {"code": "H1330", "name": "Дуб Санта-Фе винтаж", "struct": "ST10", "prices": {"8": 6000.0, "16": 5900.0, "25": 8860.0}}, {"code": "H1344", "name": "Дуб Шерман коньяк коричневый", "struct": "ST32", "prices": {"8": 7680.0, "16": 7580.0, "25": 9850.0}}, {"code": "H1346", "name": "Дуб Шерман антрацит", "struct": "ST32", "prices": {"8": 7680.0, "16": 7580.0, "25": 9850.0}}, {"code": "H1362", "name": "Дуб Барония светлый (НОВИНКА)", "struct": "ST12", "prices": {"8": 5610.0, "16": 5650.0}}, {"code": "H1367", "name": "Дуб Каселла натуральный светлый (НОВИНКА)", "struct": "ST40", "prices": {"8": 7870.0, "16": 7770.0, "18": 9300.0, "25": 9850.0}}, {"code": "H1385", "name": "Дуб Каселла натуральный (НОВИНКА)", "struct": "ST40", "prices": {"8": 7870.0, "16": 7770.0, "18": 9300.0, "25": 9850.0}}, {"code": "H1386", "name": "Дуб Каселла коричневый (НОВИНКА)", "struct": "ST40", "prices": {"8": 7870.0, "16": 7770.0, "18": 9300.0, "25": 9850.0}}, {"code": "H1399", "name": "Дуб Денвер трюфель", "struct": "ST10", "prices": {"8": 6040.0, "16": 5900.0, "25": 8860.0}}, {"code": "H1401", "name": "Сосна Касцина", "struct": "ST22", "prices": {"8": 5310.0, "16": 5210.0, "25": 7970.0}}, {"code": "H1487", "name": "Пихта Брамберг", "struct": "ST22", "prices": {"16": 5210.0}}, {"code": "H1636", "name": "Вишня Локарно", "struct": "ST12", "prices": {"8": 5110.0, "16": 5210.0, "25": 7890.0}}, {"code": "H1710", "name": "Каштан Кентукки песочный", "struct": "ST10", "prices": {"8": 6200.0, "16": 6100.0, "25": 9180.0}}, {"code": "H1714", "name": "Орех Линкольн", "struct": "ST19", "prices": {"8": 6280.0, "16": 6250.0, "25": 8730.0}}, {"code": "H1715", "name": "Орех Парона (НОВИНКА)", "struct": "ST12", "prices": {"16": 5210.0}}, {"code": "H1732", "name": "Береза Песочная (НОВИНКА)", "struct": "ST9", "prices": {"16": 4950.0}}, {"code": "H1910", "name": "Бук луговой (НОВИНКА)", "struct": "ST9", "prices": {"16": 4950.0}}, {"code": "H2033", "name": "Дуб хантон темный", "struct": "ST10", "prices": {"16": 6350.0}}, {"code": "H3012", "name": "Кокоболо натуральный", "struct": "ST22", "prices": {"8": 5180.0, "16": 5210.0, "25": 8250.0}}, {"code": "H3003", "name": "Дуб Норидж (НОВИНКА)", "struct": "ST19", "prices": {"16": 6250.0, "25": 9210.0}}, {"code": "H3043", "name": "Эвкалипт тёмно-коричневый (НОВИНКА)", "struct": "ST12", "prices": {"8": 5750.0, "16": 5650.0, "25": 8520.0}}, {"code": "H305", "name": "Дуб Тонсберг натуральный (НОВИНКА)", "struct": "ST12", "prices": {"8": 6200.0, "16": 6100.0, "25": 9090.0}}, {"code": "H309", "name": "Дуб Тонсберг коричневый (НОВИНКА)", "struct": "ST12", "prices": {"8": 6200.0, "16": 6100.0, "25": 9090.0}}, {"code": "H3131", "name": "Дуб Давос натуральный", "struct": "ST12", "prices": {"8": 5310.0, "16": 5210.0, "25": 8380.0}}, {"code": "H3133", "name": "Дуб Давос трюфель", "struct": "ST12", "prices": {"8": 5310.0, "16": 5210.0, "25": 8210.0}}, {"code": "H3146", "name": "Дуб Лоренцо бежево-серый", "struct": "ST19", "prices": {"8": 6370.0, "16": 6270.0, "25": 8790.0}}, {"code": "H3152", "name": "Дуб Винченца беленый (НОВИНКА)", "struct": "ST19", "prices": {"8": 6450.0, "16": 6350.0, "25": 9400.0}}, {"code": "H3154", "name": "Дуб Чарльстон темно-коричневый", "struct": "ST36", "prices": {"8": 7490.0, "16": 7390.0, "25": 9850.0}}, {"code": "H3156", "name": "Дуб Корбридж серый", "struct": "ST12", "prices": {"8": 5310.0, "16": 5210.0, "25": 8340.0}}, {"code": "H3157", "name": "Дуб Винченца", "struct": "ST12", "prices": {"8": 5260.0, "16": 5210.0, "18": 6310.0, "25": 8340.0}}, {"code": "H3170", "name": "Дуб Кендал натуральный", "struct": "ST12", "prices": {"8": 5750.0, "16": 5650.0, "25": 8380.0}}, {"code": "H3176", "name": "Дуб Галифакс олово", "struct": "ST37", "prices": {"8": 7680.0, "16": 7580.0, "25": 9690.0}}, {"code": "H3190", "name": "Металлик Файнлайн антрацит", "struct": "ST19", "prices": {"16": 6250.0, "25": 9230.0}}, {"code": "H3195", "name": "Файнлайн белый (НОВИНКА)", "struct": "ST19", "prices": {"16": 6250.0, "18": 6310.0, "25": 9230.0}}, {"code": "H3197", "name": "Файнлайн средне-серый (НОВИНКА)", "struct": "ST19", "prices": {"8": 6450.0, "16": 6350.0}}, {"code": "H3198", "name": "Файнлайн темно-серый (НОВИНКА)", "struct": "ST19", "prices": {"16": 6350.0}}, {"code": "H3303", "name": "Дуб Гамильтон натуральный", "struct": "ST10", "prices": {"8": 5650.0, "16": 5650.0, "25": 7970.0}}, {"code": "H3309", "name": "Дуб Гладстоун песочный", "struct": "ST28", "prices": {"8": 7680.0, "16": 7580.0, "25": 9850.0}}, {"code": "H3317", "name": "Дуб кунео коричневый (НОВИНКА)", "struct": "ST28", "prices": {"8": 7680.0, "16": 7580.0, "25": 9850.0}}, {"code": "H3325", "name": "Дуб Гладстоун табак", "struct": "ST28", "prices": {"8": 7680.0, "16": 7580.0, "25": 9850.0}}, {"code": "H3331", "name": "Дуб Небраска натуральный", "struct": "ST10", "prices": {"8": 5770.0, "16": 5650.0, "25": 8230.0}}, {"code": "H3359", "name": "Дуб Давенпорт натуральный светлый (НОВИНКА)", "struct": "ST32", "prices": {"16": 7580.0, "25": 9850.0}}, {"code": "H3395", "name": "Дуб Корбридж натуральный", "struct": "ST12", "prices": {"8": 5050.0, "16": 4950.0, "18": 5790.0, "25": 7780.0}}, {"code": "H3398", "name": "Дуб Кендал коньяк", "struct": "ST12", "prices": {"8": 5310.0, "16": 5210.0, "25": 7780.0}}, {"code": "H3430", "name": "Сосна Аланд белая", "struct": "ST22", "prices": {"8": 5310.0, "16": 5210.0, "25": 8410.0}}, {"code": "H3433", "name": "Сосна Аланд полярная", "struct": "ST22", "prices": {"8": 5310.0, "16": 5210.0, "25": 8410.0}}, {"code": "H3450", "name": "Флитвуд белый", "struct": "ST22", "prices": {"8": 5310.0, "16": 5210.0}}, {"code": "H3700", "name": "Орех Пацифик натуральный", "struct": "ST10", "prices": {"8": 5750.0, "16": 5650.0, "25": 8670.0}}, {"code": "H3702", "name": "Орех Пацифик табак", "struct": "ST10", "prices": {"8": 5750.0, "16": 5650.0, "25": 8670.0}}, {"code": "H3710", "name": "Орех карини натуральный", "struct": "ST12", "prices": {"8": 5750.0, "16": 5650.0, "18": 6720.0, "25": 8310.0}}, {"code": "H3730", "name": "Гикори натуральный", "struct": "ST10", "prices": {"8": 5750.0, "16": 5650.0, "18": 6720.0, "25": 8310.0}}, {"code": "H3734", "name": "Орех Дижон натуральный", "struct": "ST9", "prices": {"8": 5050.0, "16": 4950.0, "18": 5790.0, "25": 6730.0}}, {"code": "Н3840", "name": "Клен Мандал натуральный", "struct": "ST9", "prices": {"16": 5140.0}}, {"code": "H3860", "name": "Клен сахарный шампань", "struct": "ST9", "prices": {"16": 5210.0}}, {"code": "F186", "name": "Бетон Чикаго светло-серый", "struct": "ST9", "prices": {"8": 6000.0, "16": 5900.0, "25": 7570.0}}, {"code": "F187", "name": "Бетон Чикаго темно-серый", "struct": "ST9", "prices": {"8": 6000.0, "16": 5900.0, "25": 7570.0}}, {"code": "F206", "name": "Камень Пьетра Гриджиа чёрный", "struct": "ST9", "prices": {"16": 6100.0}}, {"code": "F235", "name": "Сланец Скиваро (НОВИНКА)", "struct": "ST10", "prices": {"16": 6100.0}}, {"code": "F243", "name": "Мрамор Кандела светло-серый (НОВИНКА)", "struct": "ST10", "prices": {"16": 6100.0}}, {"code": "F323", "name": "Кобра бронза (НОВИНКА)", "struct": "ST20", "prices": {"16": 6500.0}}, {"code": "F416", "name": "Текстиль Бежевый", "struct": "ST10", "prices": {"16": 6100.0}}, {"code": "F433", "name": "Лён антрацит", "struct": "ST10", "prices": {"16": 6100.0}}, {"code": "F528", "name": "Металл брашированный бронзовый (НОВИНКА)", "struct": "ST20", "prices": {"16": 6500.0}}, {"code": "F685", "name": "Акапулько", "struct": "ST10", "prices": {"16": 6100.0}}, {"code": "F765", "name": "Серебристый", "struct": "ST20", "prices": {"16": 5260.0}}, {"code": "F800", "name": "Мрамор Кристалл (НОВИНКА)", "struct": "ST9", "prices": {"16": 6100.0}}];
+
+const EGGER_KROMKA = [
+  {category:'Однотонные декоры Egger', prices:{'0.4×19':15, '0.8×19':31, '0.8×23':38, '2×19':56, '0.4×28':30, '0.8×28':59, '2×28':85, '2×35':146, '1.5×43':165}},
+  {category:'Древесные / фантазийные декоры Egger', prices:{'0.4×19':25, '0.8×19':42, '0.8×23':51, '2×19':75, '0.4×28':42, '0.8×28':81, '2×28':115, '2×35':155, '1.5×43':187}},
+  {category:'Кромка под ЛМДФ — матовые декоры', prices:{'1×23':120}},
+  {category:'Кромка под ЛМДФ — глянцевые декоры', prices:{'1×23':120}},
+];
+
+const FACADE_CATALOG = [
+  {name:'МДФ мыло 16мм', price:6445, type:'paint'},
+  {name:'МДФ мыло 19мм', price:6825, type:'paint'},
+  {name:'МДФ мыло 22мм', price:7254, type:'paint'},
+  {name:'МДФ фреза 16мм', price:9295, type:'paint'},
+  {name:'МДФ фреза 19мм', price:9675, type:'paint'},
+  {name:'МДФ фреза 22мм', price:10001, type:'paint'},
+  {name:'МДФ глянец 16мм', price:8853, type:'paint'},
+  {name:'МДФ глянец 19мм', price:9233, type:'paint'},
+  {name:'МДФ глянец 22мм', price:9663, type:'paint'},
+  {name:'МДФ ф глянец 16мм', price:11703, type:'paint'},
+  {name:'МДФ ф глянец 19мм', price:12083, type:'paint'},
+  {name:'МДФ ф глянец 22мм', price:12513, type:'paint'},
+  {name:'Шпон файнлайн', price:8600, type:'veneer'},
+  {name:'Шпон натуральный', price:11600, type:'veneer'},
+  {name:'Шпон рамка', price:13400, type:'veneer'},
+  // Покраска материала заказчика (из прайса калькулятора «Фасады»)
+  {name:'Покраска заказчика · фреза', price:6580, type:'paint'},
+  {name:'Покраска заказчика · мыло', price:4500, type:'paint'},
+  {name:'Покраска заказчика · глянец', price:7280, type:'paint'},
+];
+// Обратка (покраска/шпонирование с обратной стороны), ₽/м² — из прайса «Фасады»
+const FACADE_DOUBLE_SIDED_SURCHARGE = {paint: 4500, veneer: 5500};
+
+const KROMKA_LABOR_CATALOG = [
+  {name:'0,4×19', price:55},
+  {name:'1×19', price:55},
+  {name:'2×19', price:65},
+  {name:'2×35', price:80},
+  {name:'0,4×35', price:70},
+  {name:'Пластик в ручную (до 1м)', price:180},
+  {name:'1×22 (кромка АГТ, Кастомону)', price:80},
+  {name:'Кромление криволинейных деталей (до 1м)', price:150},
+];
+
+// ==== Полная база материалов из калькулятора «Распил» (ЛДСП/ЛМДФ/МДФ/фанера: Lamarty, АМК-Троя, AGT, 5K) ====
+const RASPIL_LDSP = [
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Люкс · гладкие (W,L,R,A,K,O,T,P,V)","struct":"СФЗ / Lamarty","prices":{"10":3310,"16":3845,"22":4869,"25":5377}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Люкс · структура (D,N,G,US)","struct":"СФЗ / Lamarty","prices":{"10":4170,"16":4345,"22":5439,"25":5968}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Люкс · глуб. структура (N*,D*,U)","struct":"СФЗ / Lamarty","prices":{"10":4540,"16":4680,"22":5790,"25":6518}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Премиум · гладкие (W,L,R,A,K,O,T,P,V)","struct":"СФЗ / Lamarty","prices":{"10":3200,"16":3710,"22":4732,"25":5267}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Премиум · структура (D,N,G,US)","struct":"СФЗ / Lamarty","prices":{"10":3770,"16":4210,"22":4965,"25":5673}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Премиум · глуб. структура (N*,D*,U)","struct":"СФЗ / Lamarty","prices":{"10":4155,"16":4570,"22":5336,"25":6044}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Классика · гладкие (W,L,R,A,K,O,T,P,V)","struct":"СФЗ / Lamarty","prices":{"10":2910,"16":3480,"22":4258,"25":4924}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Классика · структура (D,N,G,US)","struct":"СФЗ / Lamarty","prices":{"10":3250,"16":3715,"22":4491,"25":5329}},
+  {"brand":"","code":"ЛДСП Lamarty (Р2)","name":"Классика · глуб. структура (N*,D*,U)","struct":"СФЗ / Lamarty","prices":{"10":3650,"16":4100,"22":4869,"25":5728}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Люкс · гладкие (W,L,R,A,K,O,T,P,V)","struct":"СФЗ / Lamarty","prices":{"16":5645}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Люкс · структура (D,N,G,US)","struct":"СФЗ / Lamarty","prices":{"16":6205}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Люкс · глуб. структура (N*,D*,U)","struct":"СФЗ / Lamarty","prices":{"16":6580}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Премиум · гладкие (W,L,R,A,K,O,T,P,V)","struct":"СФЗ / Lamarty","prices":{"16":5330}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Премиум · структура (D,N,G,US)","struct":"СФЗ / Lamarty","prices":{"16":5870}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Премиум · глуб. структура (N*,D*,U)","struct":"СФЗ / Lamarty","prices":{"16":6260}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Классика · гладкие (W,L,R,A,K,O,T,P,V)","struct":"СФЗ / Lamarty","prices":{"16":3800}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Классика · структура (D,N,G,US)","struct":"СФЗ / Lamarty","prices":{"16":4000}},
+  {"brand":"","code":"ЛДСП Lamarty влагостойкая (Р5)","name":"Классика · глуб. структура (N*,D*,U)","struct":"СФЗ / Lamarty","prices":{"16":4300}},
+  {"brand":"","code":"Фанера меламиновая","name":"Белый","struct":"СФЗ","prices":{"6":3808,"9":4256,"12":4631,"15":4973,"16":5325,"18":5468,"21":6003}},
+  {"brand":"","code":"Фанера меламиновая","name":"Тэффи","struct":"СФЗ","prices":{"6":3545,"9":3989,"12":4369,"15":4704,"16":5070,"18":5198,"21":5748}},
+  {"brand":"","code":"Фанера меламиновая","name":"Вулканический серый","struct":"СФЗ","prices":{"6":3627,"9":4072,"12":4451,"15":4792,"16":5150,"18":5285,"21":5819}},
+  {"brand":"","code":"Фанера меламиновая","name":"Фьорд","struct":"СФЗ","prices":{"6":5032,"9":5476,"12":5856,"15":6189,"16":6555,"18":6693,"21":7227}},
+  {"brand":"","code":"Фанера меламиновая","name":"Парма","struct":"СФЗ","prices":{"6":5001,"9":5441,"12":5814,"15":6154,"16":6515,"18":6649,"21":7197}},
+  {"brand":"","code":"Фанера меламиновая","name":"Альберо","struct":"СФЗ","prices":{"6":3563,"9":4011,"12":4386,"15":4725,"16":5080,"18":5223,"21":5758}},
+  {"brand":"","code":"Фанера меламиновая","name":"Дуб Вотан","struct":"СФЗ","prices":{"6":3808,"9":4256,"12":4631,"15":4973,"16":5325,"18":5468,"21":6003}},
+  {"brand":"","code":"Фанера меламиновая","name":"Медея / Хронос / Эра","struct":"СФЗ","prices":{"6":3980,"9":4422,"12":4800,"15":5141,"16":5495,"18":5635,"21":6177}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"AGT 2 группа","struct":"СФЗ / AGT","prices":{"18":8164}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"AGT 3 группа","struct":"СФЗ / AGT","prices":{"18":9000}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"AGT 4 группа","struct":"СФЗ / AGT","prices":{"18":9814}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"AGT 5 группа","struct":"СФЗ / AGT","prices":{"18":12198}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"AGT Supramat","struct":"СФЗ / AGT","prices":{"18":12737}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"3P 8 гр · обратка ПВХ","struct":"СФЗ / AGT","prices":{"18":11218}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"3P 8 гр · двусторонняя","struct":"СФЗ / AGT","prices":{"18":14665}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"3P 9 гр · обратка ПВХ","struct":"СФЗ / AGT","prices":{"18":12259}},
+  {"brand":"","code":"Панель AGT (глянец/супермат)","name":"3P 9 гр · двусторонняя","struct":"СФЗ / AGT","prices":{"18":19699}},
+  {"brand":"","code":"Панель 5К (глянец/матовый)","name":"Белый 9002 глянец","struct":"СФЗ / 5K","prices":{"18":12753}},
+  {"brand":"","code":"Панель 5К (глянец/матовый)","name":"Белый 29002 матовый","struct":"СФЗ / 5K","prices":{"18":13312}},
+  {"brand":"","code":"Панель 5К (глянец/матовый)","name":"Lamigloss глянец","struct":"СФЗ / 5K","prices":{"18":13091}},
+  {"brand":"","code":"Панель 5К (глянец/матовый)","name":"Lamimatt матовый","struct":"СФЗ / 5K","prices":{"18":13546}},
+  {"brand":"","code":"Панель 5К (глянец/матовый)","name":"Lamiart глянец","struct":"СФЗ / 5K","prices":{"18":14222}},
+  {"brand":"","code":"Панель 5К (глянец/матовый)","name":"Lamiart матовый","struct":"СФЗ / 5K","prices":{"18":14794}},
+  {"brand":"","code":"Панель 5К (глянец/матовый)","name":"Lamifeel матовый","struct":"СФЗ / 5K","prices":{"18":16575}},
+  {"brand":"","code":"ЛДСП STANDART","name":"Группа 7 (базовая)","struct":"АМК-Троя","prices":{"10":4120,"16":3570,"22":4610}},
+  {"brand":"","code":"ЛДСП STANDART","name":"Группа 8 (структура)","struct":"АМК-Троя","prices":{"10":4190,"16":3680,"22":4650}},
+  {"brand":"","code":"ЛДСП COLOR","name":"Группа 2","struct":"АМК-Троя","prices":{"10":4280,"16":3440,"22":4720}},
+  {"brand":"","code":"ЛДСП COLOR","name":"Группа 3","struct":"АМК-Троя","prices":{"10":4260,"16":3710,"22":4640}},
+  {"brand":"","code":"ЛДСП COLOR","name":"Группа 4","struct":"АМК-Троя","prices":{"10":4480,"16":3970,"22":4850}},
+  {"brand":"","code":"ЛДСП COLOR","name":"Группа 6","struct":"АМК-Троя","prices":{"10":4700,"16":4120,"22":5180}},
+  {"brand":"","code":"ЛДСП COLOR","name":"EXTRAVERT влагостойкий","struct":"АМК-Троя","prices":{"16":4680}},
+  {"brand":"","code":"ЛДСП CONTEMPO","name":"Группа 8","struct":"АМК-Троя","prices":{"10":4190,"16":3680,"22":4650}},
+  {"brand":"","code":"ЛДСП CONTEMPO","name":"Группа 9","struct":"АМК-Троя","prices":{"10":4520,"16":3970,"22":4630}},
+  {"brand":"","code":"ЛДСП CONTEMPO","name":"Группа 10","struct":"АМК-Троя","prices":{"10":4700,"16":4200}},
+  {"brand":"","code":"ЛДСП HARMONY","name":"Группа 12","struct":"АМК-Троя","prices":{"10":5060,"16":4640}},
+  {"brand":"","code":"ЛДСП АМК (эконом, 16мм)","name":"Группа 1","struct":"АМК-Троя","prices":{"16":3100}},
+  {"brand":"","code":"ЛДСП АМК (эконом, 16мм)","name":"Группа 2","struct":"АМК-Троя","prices":{"16":3300}},
+  {"brand":"","code":"ЛДСП АМК (эконом, 16мм)","name":"Группа 3","struct":"АМК-Троя","prices":{"16":3550}},
+  {"brand":"","code":"ЛДСП АМК (эконом, 16мм)","name":"Группа 4","struct":"АМК-Троя","prices":{"16":3320}},
+  {"brand":"","code":"ЛДСП АМК (эконом, 16мм)","name":"Группа 5","struct":"АМК-Троя","prices":{"16":3470}},
+  {"brand":"","code":"ЛДСП АМК (эконом, 16мм)","name":"Группа 6","struct":"АМК-Троя","prices":{"16":3480}},
+  {"brand":"","code":"ЛДСП АМК (эконом, 16мм)","name":"Группа 7","struct":"АМК-Троя","prices":{"16":3770}},
+  {"brand":"","code":"ЛМДФ FAVORITE (глянец/мат)","name":"Ultra Gloss / Ultra Matt","struct":"АМК-Троя","prices":{"18":9700}},
+  {"brand":"","code":"ЛМДФ MOONLIGHT","name":"Группа 2","struct":"АМК-Троя","prices":{"16":4830}},
+  {"brand":"","code":"ЛМДФ MOONLIGHT","name":"Группа 4","struct":"АМК-Троя","prices":{"16":4830}},
+  {"brand":"","code":"ЛМДФ MOONLIGHT","name":"Группа 6","struct":"АМК-Троя","prices":{"16":4830}},
+  {"brand":"","code":"ЛМДФ MOONLIGHT","name":"Группа 51","struct":"АМК-Троя","prices":{"16":5010}},
+  {"brand":"","code":"ЛМДФ MOONLIGHT","name":"Группа 52","struct":"АМК-Троя","prices":{"16":4920}},
+  {"brand":"","code":"ЛМДФ MOONLIGHT","name":"Группа 53","struct":"АМК-Троя","prices":{"16":5010}},
+  {"brand":"","code":"ЛМДФ MOONLIGHT","name":"Группа 55","struct":"АМК-Троя","prices":{"16":5380}},
+  {"brand":"","code":"ЛДСП SILKWAY","name":"Группа 51","struct":"АМК-Троя","prices":{"16":3830}},
+  {"brand":"","code":"ЛДСП SILKWAY","name":"Группа 55","struct":"АМК-Троя","prices":{"16":4030}},
+  {"brand":"","code":"МДФ шлифованный","name":"Шлифованный (под покраску/фрезеровку)","struct":"АМК-Троя","prices":{"6":1840,"8":2240,"10":2640,"12":3010,"16":3690,"18":4110,"19":4320,"22":5060,"25":5850}},
+  {"brand":"","code":"ЛМДФ Белый (глухой)","name":"Односторонний","struct":"АМК-Троя","prices":{"16":4380,"19":4760,"22":5020}},
+  {"brand":"","code":"ЛМДФ Белый (глухой)","name":"Двусторонний","struct":"АМК-Троя","prices":{"16":4760,"19":5140,"22":5400}},
+  {"brand":"","code":"ЛХДФ / ХДФ","name":"ЛХДФ в декоре 3мм","struct":"АМК-Троя","prices":{"3":1200}},
+  {"brand":"","code":"ЛХДФ / ХДФ","name":"ХДФ нешлифованный","struct":"АМК-Троя","prices":{"3":1040,"4":1390}},
+];
+
+// ==== Кромка из калькулятора «Распил» (Lamarty/REHAU, AGT, 5K) ====
+const RASPIL_KROMKA = [
+  {"category":"Кромка Lamarty/REHAU · Белый","prices":{"19×0.4":15,"19×0.8":20,"19×2":40}},
+  {"category":"Кромка Lamarty/REHAU · Фоновые","prices":{"19×0.4":15,"19×0.8":25,"19×2":45}},
+  {"category":"Кромка Lamarty/REHAU · Древесные","prices":{"19×0.4":15,"19×0.8":30,"19×2":55}},
+  {"category":"Кромка AGT 22×1","prices":{"22×1 · 1 группа":81,"22×1 · 2 группа":95,"22×1 · Коллекция 3P":159}},
+  {"category":"Кромка 5K 22×1","prices":{"22×1 · Lamimatt/Lamigloss/однотон":60,"22×1 · Lamiart":65}},
+];
+// Расширяем существующие прайсы просчёта полной базой из «Распила»
+// (пикеры ЛДСП и кромки читают именно эти массивы — добавленное появится в списках).
+RASPIL_LDSP.forEach(e=>EGGER_LDSP.push(e));
+RASPIL_KROMKA.forEach(e=>EGGER_KROMKA.push(e));
+
+
+  // Sizes shared between the EGGER material catalog and the shop's labor price
+// list, so picking a material size can auto-pick the matching labor price.
+// Sizes with no equivalent in the labor list (0.8×23, 0.4×28, 0.8×28, 2×28,
+// 1.5×43) are left alone — no real price to guess from.
+const EGGER_TO_LABOR_SIZE = {
+  '0.4×19': '0,4×19',
+  '0.8×19': '1×19',
+  '2×19': '2×19',
+  '2×35': '2×35',
+};
+
+// Finds the product's "Кромление (работа)" line and sets it to the labor
+// price matching the given EGGER material edge size, if one exists.
+function syncEdgeLaborTo(size){
+  const laborName = EGGER_TO_LABOR_SIZE[size];
+  if(!laborName) return false;
+  const laborIdx = KROMKA_LABOR_CATALOG.findIndex(k => k.name === laborName);
+  if(laborIdx === -1) return false;
+  const laborItem = state.items.find(x => x.auto === 'edgeLabor');
+  if(!laborItem) return false;
+  const k = KROMKA_LABOR_CATALOG[laborIdx];
+  laborItem.kromkaLaborIndex = laborIdx;
+  laborItem.price = k.price;
+  laborItem.name = `Кромление (работа) ${k.name}`;
+  return true;
+}
+
+const DEFAULT_ITEMS = [
+  {key:'ldsp', name:'ЛДСП', unit:'лист', price:4100, qty:0, auto:'ldsp', isLdspPicker:true, eggerIndex:null, eggerThickness:null},
+  {key:'facade', name:'Фасад МДФ краска', unit:'м²', price:7200, qty:0, auto:'facade', isFacadePicker:true, facadeCatalogIndex:null},
+  {key:'cut', name:'Распиловка', unit:'лист', price:750, qty:0, auto:'cut'},
+  {key:'edgeMaterial', name:'Кромление (материал)', unit:'мп', price:60, qty:0, auto:'edge', eggerEdgeCategory:null, eggerEdgeSize:null},
+  {key:'edgeLabor', name:'Кромление (работа)', unit:'мп', price:55, qty:0, auto:'edgeLabor', kromkaLaborIndex:null},
+  {key:'countertop', name:'Столешница', unit:'шт', price:16000, qty:0, countertopMaterial:'ldsp'},
+  {key:'hdf', name:'ХДФ', unit:'лист', price:1200, qty:0},
+  {key:'misc1', name:'Позиция', unit:'шт', price:200, qty:0},
+  {key:'tipon', name:'Tip-on', unit:'шт', price:500, qty:0},
+  {key:'hingesBlum', name:'Петли Blum', unit:'шт', price:450, qty:0},
+  {key:'handles', name:'Ручки', unit:'шт', price:800, qty:0},
+  {key:'kamar', name:'Камар', unit:'шт', price:500, qty:0},
+  {key:'misc2', name:'Позиция', unit:'шт', price:2000, qty:0},
+  {key:'drawer1', name:'Ящик', unit:'шт', price:4800, qty:0},
+  {key:'drawer2', name:'Ящик', unit:'шт', price:3800, qty:0},
+  {key:'edgePlastic', name:'Кромка пластик/АГТ', unit:'шт', price:120, qty:0},
+  {key:'cutPlastic', name:'Распиловка пластик/АГТ', unit:'шт', price:1200, qty:0},
+  {key:'plastic', name:'Пластик/АГТ', unit:'лист', price:7700, qty:0},
+  {key:'plinth', name:'Цоколь', unit:'шт', price:1500, qty:0},
+  {key:'millHandle', name:'Фреза ручка', unit:'шт', price:200, qty:0},
+  {key:'baseboard', name:'Плинтус', unit:'шт', price:800, qty:0},
+  {key:'tray1', name:'Поддон', unit:'шт', price:600, qty:0},
+  {key:'tray2', name:'Лоток', unit:'шт', price:800, qty:0},
+  {key:'wallPanel', name:'Стеновая', unit:'шт', price:120, qty:0},
+  {key:'cabinetHolder', name:'Шкафодержатель', unit:'шт', price:500, qty:0},
+  {key:'ledProfile', name:'Подсветка в профиле', unit:'шт', price:1160, qty:0},
+  {key:'delivery', name:'Доставка', unit:'шт', price:2500, qty:0},
+  {key:'misc3', name:'Прочее', unit:'шт', price:1000, qty:0},
+  {key:'dishRack', name:'Сушка нержавейка без дна', unit:'шт', price:1500, qty:0},
+];
+
+function makeId(){ return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// Every cost item gets its own stable id (distinct from the shared template
+// `key`) so a dimension row can point at exactly "this decor's line", even
+// when there are several ЛДСП/facade/countertop lines in the same product.
+function cloneDefaultItem(def){
+  const clone = JSON.parse(JSON.stringify(def));
+  clone.id = makeId();
+  return clone;
+}
+
+function defaultProduct(name){
+  return {
+    id: makeId(),
+    name: name || 'Изделие',
+    facade: [{h:0,w:0,qty:0}],
+    carcass: [{h:0,w:0,qty:0}],
+    countertop: [{len:0,w:600,qty:0}],
+    items: DEFAULT_ITEMS.map(cloneDefaultItem),
+    settings: {markup:2.3, sheetArea:5.7, stockLen:3, countertopMarkup:1.35},
+    kpNotes: '',
+    kpImage: null,
+    countertopKpNote: '',
+  };
+}
+
+function kpChecklistText(p){
+  return p.items
+    .filter(it=> it.includeInKp && it.name && it.name.trim())
+    .map(it=> it.name.trim())
+    .join('\n');
+}
+
+function defaultApp(){
+  const p = defaultProduct('Изделие 1');
+  return {
+    products: [p],
+    activeProductId: p.id,
+    activeView: 'product',
+    documentTitle: '',
+    kp: {
+      orgName: 'ИП Рожков Александр Сергеевич',
+      address: 'Краснодарский край, г. Новороссийск, ул. Чехова д.43',
+      requisites: 'ОГРНИП 315231500008708  ИНН 231518299058',
+      prepayPercent: 70,
+      footerNote: 'Монтажные работы и доставка бесплатно!\nУстановка техники оплачивается отдельно!',
+    },
+  };
+}
+
+// Every distinct file needs its own storage bucket — otherwise editing a
+// downloaded snapshot (or the live/master copy) would leak into every other
+// copy opened in the same browser, since browsers largely share localStorage
+// across local file:// documents. The pristine master file (as authored,
+// never run through "Скачать копию") has an empty #appSeed and always
+// resolves to the fixed 'master' identity; exportToolCopy() bakes a fresh
+// unique id into the downloaded copy's own #appSeed, giving it a storage key
+// no other file — including the source — will ever read or write.
+function getFileIdentity(){
+  try{
+    const seedEl = document.getElementById('appSeed');
+    const seedText = seedEl && seedEl.textContent.trim();
+    if(seedText){
+      const seed = JSON.parse(seedText);
+      if(seed && seed.id) return seed.id;
+    }
+  }catch(e){}
+  return 'master';
+}
+const FILE_IDENTITY = getFileIdentity();
+const APP_KEY = 'mebelart_app_v2__' + FILE_IDENTITY;
+const SAVES_KEY = 'mebelart_calc_saves_v2__' + FILE_IDENTITY;
+
+function migrateLegacy(){
+  try{
+    const products = [];
+    const savesRaw = localStorage.getItem('mebelart_calc_saves');
+    if(savesRaw){
+      JSON.parse(savesRaw).forEach(s=>{
+        if(!s || !s.data) return;
+        const p = defaultProduct(s.name || 'Изделие');
+        Object.assign(p, {
+          facade: s.data.facade || p.facade,
+          carcass: s.data.carcass || p.carcass,
+          countertop: s.data.countertop || p.countertop,
+          items: s.data.items || p.items,
+          settings: s.data.settings || p.settings,
+        });
+        products.push(p);
+      });
+    }
+    const curRaw = localStorage.getItem('mebelart_calc_current');
+    if(curRaw){
+      const cur = JSON.parse(curRaw);
+      if(cur && cur.items){
+        const p = defaultProduct('Изделие 1');
+        Object.assign(p, {
+          facade: cur.facade || p.facade,
+          carcass: cur.carcass || p.carcass,
+          countertop: cur.countertop || p.countertop,
+          items: cur.items || p.items,
+          settings: cur.settings || p.settings,
+        });
+        products.unshift(p);
+      }
+    }
+    if(products.length){
+      const app = defaultApp();
+      app.products = products;
+      app.activeProductId = products[0].id;
+      return app;
+    }
+  }catch(e){ /* legacy data malformed — ignore and start fresh */ }
+  return defaultApp();
+}
+
+// Saved state under this file's own key always wins (so edits made since
+// the download are never lost on reopen); only on the very first load of a
+// freshly downloaded snapshot — nothing saved yet under its unique key — do
+// we fall back to the data baked into #appSeed at export time.
+// The source file (as delivered — no #appSeed, identity 'master') is a
+// stateless template: it always opens blank and never autosaves the working
+// session, so it can never drift from the pristine original. Persistence is
+// opt-in — "Сохранить как…" (named list) and "Скачать копию инструмента"
+// (a real, independently-identified file) both still work normally, since
+// neither of them depends on this per-keystroke autosave.
+function loadApp(){
+  if(FILE_IDENTITY === 'master') return defaultApp();
+  try{
+    const raw = localStorage.getItem(APP_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  try{
+    const seedEl = document.getElementById('appSeed');
+    const seedText = seedEl && seedEl.textContent.trim();
+    if(seedText){
+      const seed = JSON.parse(seedText);
+      if(seed && seed.app) return seed.app;
+    }
+  }catch(e){}
+  return migrateLegacy();
+}
+function saveApp(){
+  if(FILE_IDENTITY !== 'master') localStorage.setItem(APP_KEY, JSON.stringify(app));
+  scheduleAutosave();
+}
+
+function loadSaves(){
+  try{
+    const raw = localStorage.getItem(SAVES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function persistSaves(list){
+  localStorage.setItem(SAVES_KEY, JSON.stringify(list));
+}
+
+// Brings an already-saved product's cost items up to date with DEFAULT_ITEMS:
+// inserts catalog lines added in later versions (matched by stable `key`, or by
+// `auto` role / name+unit for items saved before `key` existed) and backfills
+// any new optional fields on lines that already exist — without ever touching
+// a value the user has actually set.
+function migrateProductItems(p){
+  if(!p.items) return;
+  p.items.forEach(it=>{ if(!it.id) it.id = makeId(); });
+  const used = new Array(p.items.length).fill(false);
+
+  function findMatch(def){
+    for(let i=0;i<p.items.length;i++){
+      if(!used[i] && p.items[i].key === def.key){ used[i]=true; return p.items[i]; }
+    }
+    if(def.auto){
+      for(let i=0;i<p.items.length;i++){
+        if(!used[i] && p.items[i].auto === def.auto){ used[i]=true; return p.items[i]; }
+      }
+    }
+    if(def.key === 'countertop'){
+      for(let i=0;i<p.items.length;i++){
+        if(!used[i] && p.items[i].name === 'Столешница'){ used[i]=true; return p.items[i]; }
+      }
+    }
+    for(let i=0;i<p.items.length;i++){
+      if(!used[i] && p.items[i].name === def.name && p.items[i].unit === def.unit){ used[i]=true; return p.items[i]; }
+    }
+    return null;
+  }
+
+  let insertAfter = -1;
+  DEFAULT_ITEMS.forEach(def=>{
+    const existing = findMatch(def);
+    if(existing){
+      Object.keys(def).forEach(field=>{
+        if(existing[field] === undefined) existing[field] = def[field];
+      });
+      insertAfter = p.items.indexOf(existing);
+    } else {
+      const clone = cloneDefaultItem(def);
+      p.items.splice(insertAfter + 1, 0, clone);
+      used.splice(insertAfter + 1, 0, true);
+      insertAfter += 1;
+    }
+  });
+}
+
+// Cutting-service lines dropped from the catalog — remove them from
+// already-saved products too, not just stop adding them to new ones.
+const REMOVED_ITEM_KEYS = ['cutAngle','cutDegree','cut1m','cutKupe','cutTrim','cutMill'];
+const REMOVED_ITEM_NAMES = ['Спил детали на косую','Спил детали по градусам','Пропил (до 1 метра)','Пропил под купе','Подрезка штучных деталей','Фрезерные работы (радиус)'];
+
+let app = loadApp();
+if(app.documentTitle === undefined) app.documentTitle = '';
+// Migrate the old single free-text "kpDescription" field (pre-checklist) into notes.
+app.products.forEach(p=>{
+  if(p.kpNotes === undefined) p.kpNotes = p.kpDescription || '';
+  if(p.countertopKpNote === undefined) p.countertopKpNote = '';
+  if(p.settings && p.settings.countertopMarkup === undefined) p.settings.countertopMarkup = 1.35;
+  if(p.items){
+    p.items.forEach(it=>{ if(it.includeInKp === undefined) it.includeInKp = false; });
+    p.items = p.items.filter(it => !(REMOVED_ITEM_KEYS.includes(it.key) || REMOVED_ITEM_NAMES.includes(it.name)));
+    // "Распиловка" price/unit update — only if still at the old default (untouched by the user).
+    p.items.forEach(it=>{
+      if(it.key === 'cut' || it.auto === 'cut'){
+        if(it.price === 600) it.price = 750;
+        if(it.unit === 'шт') it.unit = 'лист';
+      }
+    });
+  }
+  migrateProductItems(p);
+});
+let state; // alias to the active product
+function activeProduct(){ return app.products.find(p=>p.id===app.activeProductId) || app.products[0]; }
+function syncState(){ state = activeProduct(); app.activeProductId = state.id; }
+syncState();
+
+const $ = (id) => document.getElementById(id);
+const fmt = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+const money = (n) => Math.round(n).toLocaleString('ru-RU') + ' ₽';
+
+// Groups auto-quantity cost lines by what feeds them, so the table can tint
+// each kind a different (muted) color — every ЛДСП decor line the same
+// shade, every facade type another, etc.
+function autoRowCategory(it){
+  if(it.isLdspPicker) return 'ldsp';
+  if(it.isFacadePicker) return 'facade';
+  if(it.auto === 'edge' || it.auto === 'edgeLabor') return 'edge';
+  if(it.auto === 'cut') return 'cut';
+  if(it.countertopMaterial === 'ldsp' || it.countertopMaterial === 'compact') return 'countertop';
+  return 'other';
+}
+
+// ЛДСП/компакт-плита столешницы are auto-quantified from the countertop
+// dimension table (same pattern as ЛДСП sheets); акрил/кварз stay manual,
+// priced per subcontractor invoice.
+function isQtyAuto(it){
+  return !!(it.auto || it.isLdspPicker || it.isFacadePicker
+    || it.countertopMaterial === 'ldsp' || it.countertopMaterial === 'compact');
+}
+
+// A dimension row can be tagged (materialId) with which cost-item line it
+// belongs to, for products with several ЛДСП decors / facade types /
+// countertop materials. Untagged rows fall back to the first (primary) line
+// of that kind, so single-material products behave exactly as before.
+function resolveMaterialTarget(row, candidates){
+  if(!candidates.length) return null;
+  if(row.materialId){
+    const found = candidates.find(it=>it.id === row.materialId);
+    if(found) return found;
+  }
+  return candidates[0];
+}
+
+function recalcProduct(p){
+  const ldspItems = p.items.filter(it=>it.isLdspPicker);
+  const facadeItems = p.items.filter(it=>it.isFacadePicker);
+  const countertopItems = p.items.filter(it=>it.countertopMaterial !== undefined);
+
+  const facadeAreaById = new Map();
+  p.facade.forEach(r=>{
+    const target = resolveMaterialTarget(r, facadeItems);
+    if(!target) return;
+    const area = (r.h/1000)*(r.w/1000)*r.qty;
+    facadeAreaById.set(target.id, (facadeAreaById.get(target.id)||0) + area);
+  });
+  const facadeArea = [...facadeAreaById.values()].reduce((s,v)=>s+v, 0);
+
+  const carcassAreaById = new Map();
+  let carcassArea = 0, edgeLength = 0;
+  p.carcass.forEach(r=>{
+    const area = (r.h/1000)*(r.w/1000)*r.qty;
+    carcassArea += area;
+    edgeLength += (r.h+r.w)*2*r.qty/1000;
+    const target = resolveMaterialTarget(r, ldspItems);
+    if(target) carcassAreaById.set(target.id, (carcassAreaById.get(target.id)||0) + area);
+  });
+  const sheetsNeededById = new Map();
+  carcassAreaById.forEach((area, id)=>{
+    sheetsNeededById.set(id, area > 0 ? Math.ceil(area / p.settings.sheetArea) : 0);
+  });
+  const sheetsNeeded = [...sheetsNeededById.values()].reduce((s,v)=>s+v, 0);
+
+  const countertopLenById = new Map();
+  p.countertop.forEach(r=>{
+    const target = resolveMaterialTarget(r, countertopItems);
+    if(!target) return;
+    const len = (r.len/1000)*r.qty;
+    countertopLenById.set(target.id, (countertopLenById.get(target.id)||0) + len);
+  });
+  const countertopPiecesById = new Map();
+  countertopLenById.forEach((len, id)=>{
+    countertopPiecesById.set(id, len > 0 ? Math.ceil(len / p.settings.stockLen) : 0);
+  });
+  const countertopLen = [...countertopLenById.values()].reduce((s,v)=>s+v, 0);
+  const countertopPieces = countertopLen > 0 ? Math.ceil(countertopLen / p.settings.stockLen) : 0;
+
+  p.items.forEach(it=>{
+    if(it.isLdspPicker) it.qty = sheetsNeededById.get(it.id) || 0;
+    if(it.isFacadePicker) it.qty = fmt(facadeAreaById.get(it.id) || 0);
+    if(it.auto === 'cut') it.qty = sheetsNeeded;
+    if(it.auto === 'edge') it.qty = fmt(edgeLength);
+    if(it.auto === 'edgeLabor') it.qty = fmt(edgeLength);
+    // ЛДСП/компакт-плита столешницы come from the same shop, so their qty
+    // can be computed the same way as ЛДСП sheets. Акрил/кварц stay manual —
+    // priced per subcontractor invoice, not per "recommended slab count".
+    if(it.countertopMaterial === 'ldsp' || it.countertopMaterial === 'compact'){
+      it.qty = countertopPiecesById.get(it.id) || 0;
+    }
+  });
+
+  const ldspBreakdown = ldspItems
+    .map(it=>({name: it.name, sheets: sheetsNeededById.get(it.id) || 0, area: carcassAreaById.get(it.id) || 0}))
+    .filter(x=>x.sheets > 0);
+  const facadeBreakdown = facadeItems
+    .map(it=>({name: it.name, area: facadeAreaById.get(it.id) || 0}))
+    .filter(x=>x.area > 0);
+  const countertopBreakdown = countertopItems
+    .map(it=>({name: it.name, len: countertopLenById.get(it.id) || 0, pieces: countertopPiecesById.get(it.id) || 0}))
+    .filter(x=>x.len > 0);
+
+  // Countertops in акрил/кварц come from subcontractors and are priced with
+  // their own markup, separately from the rest of the product's cost.
+  const countertopMarkup = p.settings.countertopMarkup || 1;
+  let subtotal = 0;
+  let countertopSeparateTotal = 0;
+  const countertopSeparateMaterials = [];
+  p.items.forEach(it=>{
+    const lineSum = (Number(it.qty)||0) * (Number(it.price)||0);
+    if(it.countertopMaterial === 'acrylic' || it.countertopMaterial === 'quartz'){
+      countertopSeparateTotal += lineSum * countertopMarkup;
+      if(lineSum > 0){
+        countertopSeparateMaterials.push(it.countertopMaterial === 'acrylic' ? 'акрил' : 'кварц');
+      }
+    } else {
+      subtotal += lineSum;
+    }
+  });
+
+  const total = subtotal * p.settings.markup;
+  const grandTotal = total + countertopSeparateTotal;
+  const countertopSeparateLabel = [...new Set(countertopSeparateMaterials)].join(' / ');
+
+  return {facadeArea, carcassArea, edgeLength, sheetsNeeded, countertopLen, countertopPieces,
+    subtotal, total, countertopSeparateTotal, countertopSeparateLabel, grandTotal,
+    ldspBreakdown, facadeBreakdown, countertopBreakdown};
+}
+function recalc(){ return recalcProduct(state); }
+
+// ---- Keyboard navigation helpers (dimension tables) ----
+function focusCell(bodyId, rowIdx, colIdx){
+  const body = $(bodyId);
+  const tr = body.children[rowIdx];
+  if(!tr) return;
+  const input = tr.children[colIdx].querySelector('input');
+  if(input) input.focus();
+}
+
+// Cost-items table: checkbox, name, qty, unit, price, sum, delete — in that
+// column order, so name/qty/unit/price map to td indices 1..4.
+const ITEM_NAV_COL = {name:1, qty:2, unit:3, price:4};
+function focusItemCell(rowIdx, colKey){
+  focusCell('itemsBody', rowIdx, ITEM_NAV_COL[colKey]);
+}
+function newItemRow(){
+  return {id: makeId(), name:'Новая позиция', unit:'шт', price:0, qty:0};
+}
+function attachItemKeyNav(input, i, colKey){
+  input.addEventListener('keydown', (e)=>{
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      if(i === state.items.length - 1){
+        state.items.push(newItemRow());
+        buildItemsTable();
+        updateComputed();
+        focusItemCell(state.items.length - 1, 'name');
+        saveApp();
+      } else {
+        focusItemCell(i + 1, colKey);
+      }
+    } else if(e.key === 'ArrowUp' && i > 0){
+      e.preventDefault();
+      focusItemCell(i - 1, colKey);
+    } else if(e.key === 'ArrowLeft' && colKey === 'price'){
+      e.preventDefault();
+      focusItemCell(i, 'qty');
+    } else if(e.key === 'ArrowRight' && colKey === 'qty'){
+      e.preventDefault();
+      focusItemCell(i, 'price');
+    }
+  });
+}
+
+function makeNumberInput(value, onChange){
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.value = value;
+  input.addEventListener('focus', ()=> input.select());
+  input.addEventListener('input', ()=>{ onChange(Number(input.value) || 0); });
+  return input;
+}
+
+let facadeRefs = [], carcassRefs = [], countertopRefs = [], itemRefs = [];
+
+function thicknessLabel(cand){
+  return (cand && cand.eggerThickness) ? cand.eggerThickness + ' мм' : '—';
+}
+
+function buildDimTable(bodyId, rows, keys, refsSetter, addRowFn, buildFn, getCandidates, opts){
+  opts = opts || {};
+  const calcKeys = opts.calcKeys || ['calc'];
+  const showThickness = !!opts.showThickness;
+  const body = $(bodyId);
+  body.innerHTML = '';
+  const refs = [];
+  const candidates = getCandidates ? getCandidates() : [];
+  rows.forEach((r, i)=>{
+    const tr = document.createElement('tr');
+    keys.forEach((key, colIdx)=>{
+      const td = document.createElement('td');
+      const input = makeNumberInput(r[key], v=>{ r[key] = v; updateComputed(); saveApp(); });
+      input.addEventListener('keydown', (e)=>{
+        if(e.key === 'ArrowDown'){
+          e.preventDefault();
+          if(i === rows.length - 1){
+            addRowFn();
+            buildFn();
+            focusCell(bodyId, rows.length - 1, 0);
+            saveApp();
+          } else {
+            focusCell(bodyId, i + 1, colIdx);
+          }
+        } else if(e.key === 'ArrowUp' && i > 0){
+          e.preventDefault();
+          focusCell(bodyId, i - 1, colIdx);
+        } else if(e.key === 'ArrowLeft' && colIdx > 0){
+          e.preventDefault();
+          focusCell(bodyId, i, colIdx - 1);
+        } else if(e.key === 'ArrowRight' && colIdx < keys.length - 1){
+          e.preventDefault();
+          focusCell(bodyId, i, colIdx + 1);
+        }
+      });
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+
+    const calcTds = {};
+    calcKeys.forEach(ck=>{
+      const td = document.createElement('td');
+      td.style.color = 'var(--walnut)';
+      td.style.whiteSpace = 'nowrap';
+      tr.appendChild(td);
+      calcTds[ck] = td;
+    });
+
+    const matTd = document.createElement('td');
+    let thicknessTd = null;
+    if(candidates.length > 1){
+      const matSelect = document.createElement('select');
+      matSelect.style.cssText = 'font-size:12px;padding:5px 6px;border:1px solid var(--line);border-radius:4px;background:#fff;font-family:inherit;max-width:180px';
+      candidates.forEach(c=>{
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        matSelect.appendChild(opt);
+      });
+      matSelect.value = (r.materialId && candidates.some(c=>c.id===r.materialId)) ? r.materialId : candidates[0].id;
+      matSelect.addEventListener('change', ()=>{
+        r.materialId = matSelect.value;
+        if(thicknessTd) thicknessTd.textContent = thicknessLabel(resolveMaterialTarget(r, candidates));
+        updateComputed(); saveApp();
+      });
+      matTd.appendChild(matSelect);
+    }
+    tr.appendChild(matTd);
+
+    if(showThickness){
+      thicknessTd = document.createElement('td');
+      thicknessTd.style.cssText = 'color:var(--brass-ink);font-size:13px;white-space:nowrap';
+      thicknessTd.textContent = thicknessLabel(resolveMaterialTarget(r, candidates));
+      tr.appendChild(thicknessTd);
+    }
+
+    const delTd = document.createElement('td');
+    if(rows.length > 1){
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-danger';
+      delBtn.textContent = '✕';
+      delBtn.title = 'Удалить строку';
+      delBtn.addEventListener('click', ()=>{ rows.splice(i,1); buildFn(); updateComputed(); saveApp(); });
+      delTd.appendChild(delBtn);
+    }
+    tr.appendChild(delTd);
+    body.appendChild(tr);
+    refs.push({calcTds});
+  });
+  refsSetter(refs);
+}
+
+function buildFacadeTable(){
+  buildDimTable('facadeBody', state.facade, ['h','w','qty'], refs=>facadeRefs=refs,
+    ()=>{
+      const last = state.facade[state.facade.length-1];
+      state.facade.push({h:0,w:0,qty:0, materialId: last ? last.materialId : undefined});
+    }, buildFacadeTable,
+    ()=> state.items.filter(it=>it.isFacadePicker),
+    { calcKeys: ['area'] });
+}
+function buildCarcassTable(){
+  buildDimTable('carcassBody', state.carcass, ['h','w','qty'], refs=>carcassRefs=refs,
+    ()=>{
+      const last = state.carcass[state.carcass.length-1];
+      state.carcass.push({h:0,w:0,qty:0, materialId: last ? last.materialId : undefined});
+    }, buildCarcassTable,
+    ()=> state.items.filter(it=>it.isLdspPicker),
+    { calcKeys: ['area','edge'], showThickness: true });
+}
+function buildCountertopTable(){
+  buildDimTable('countertopBody', state.countertop, ['len','w','qty'], refs=>countertopRefs=refs,
+    ()=>{
+      const last = state.countertop[state.countertop.length-1];
+      state.countertop.push({len:0,w:600,qty:0, materialId: last ? last.materialId : undefined});
+    }, buildCountertopTable,
+    ()=> state.items.filter(it=>it.countertopMaterial !== undefined),
+    { calcKeys: ['len'] });
+}
+
+function buildItemsTable(){
+  const body = $('itemsBody');
+  body.innerHTML = '';
+  itemRefs = [];
+  state.items.forEach((it, i)=>{
+    const tr = document.createElement('tr');
+
+    const checkTd = document.createElement('td');
+    checkTd.style.textAlign = 'center';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = !!it.includeInKp;
+    checkbox.title = 'Показывать в комплектации КП';
+    checkbox.addEventListener('change', ()=>{ it.includeInKp = checkbox.checked; updateKpChecklistPreview(); saveApp(); });
+    checkTd.appendChild(checkbox);
+    tr.appendChild(checkTd);
+
+    const nameTd = document.createElement('td');
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = it.name;
+    nameInput.addEventListener('focus', ()=> nameInput.select());
+    nameInput.addEventListener('input', ()=>{ it.name = nameInput.value; updateKpChecklistPreview(); saveApp(); });
+    attachItemKeyNav(nameInput, i, 'name');
+    nameTd.appendChild(nameInput);
+    const qtyIsAuto = isQtyAuto(it);
+    if(qtyIsAuto){
+      const tag = document.createElement('span');
+      tag.className = 'auto-tag';
+      tag.textContent = 'АВТО';
+      nameTd.appendChild(tag);
+      tr.classList.add('row-auto-' + autoRowCategory(it));
+    }
+    tr.appendChild(nameTd);
+
+    const qtyTd = document.createElement('td');
+    const qtyInput = document.createElement('input');
+    qtyInput.type = 'number';
+    qtyInput.min = '0';
+    qtyInput.step = 'any';
+    qtyInput.value = it.qty;
+    if(qtyIsAuto){
+      qtyInput.readOnly = true;
+    } else {
+      qtyInput.addEventListener('focus', ()=> qtyInput.select());
+      qtyInput.addEventListener('input', ()=>{ it.qty = Number(qtyInput.value)||0; updateComputed(); saveApp(); });
+    }
+    attachItemKeyNav(qtyInput, i, 'qty');
+    qtyTd.appendChild(qtyInput);
+    tr.appendChild(qtyTd);
+
+    const unitTd = document.createElement('td');
+    const unitInput = document.createElement('input');
+    unitInput.type = 'text';
+    unitInput.value = it.unit;
+    unitInput.addEventListener('input', ()=>{ it.unit = unitInput.value; saveApp(); });
+    attachItemKeyNav(unitInput, i, 'unit');
+    unitTd.appendChild(unitInput);
+    tr.appendChild(unitTd);
+
+    const priceTd = document.createElement('td');
+    const priceInput = document.createElement('input');
+    priceInput.type = 'number';
+    priceInput.min = '0';
+    priceInput.value = it.price;
+    priceInput.readOnly = !!(
+      (it.isLdspPicker && it.eggerIndex != null) ||
+      (it.auto === 'edge' && it.eggerEdgeCategory != null) ||
+      (it.isFacadePicker && it.facadeCatalogIndex != null) ||
+      (it.auto === 'edgeLabor' && it.kromkaLaborIndex != null)
+    );
+    priceInput.addEventListener('focus', ()=> priceInput.select());
+    priceInput.addEventListener('input', ()=>{ it.price = Number(priceInput.value)||0; updateComputed(); saveApp(); });
+    attachItemKeyNav(priceInput, i, 'price');
+    priceTd.appendChild(priceInput);
+    tr.appendChild(priceTd);
+
+    const sumTd = document.createElement('td');
+    sumTd.className = 'sum-col';
+    tr.appendChild(sumTd);
+
+    const delTd = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-danger';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Удалить позицию';
+    delBtn.addEventListener('click', ()=>{
+      // Deleting a decor line can orphan dimension rows pointed at it via
+      // materialId — rebuild those tables too so their pickers stay in sync.
+      state.items.splice(i,1);
+      buildAndUpdate();
+      saveApp();
+    });
+    delTd.appendChild(delBtn);
+    tr.appendChild(delTd);
+
+    body.appendChild(tr);
+    itemRefs.push({qtyInput, sumTd});
+
+    // EGGER decor/thickness picker — on the auto ЛДСП row and any extra decor rows.
+    if(it.isLdspPicker){
+      const eggerRow = document.createElement('div');
+      eggerRow.className = 'egger-row';
+
+      const decorSelect = document.createElement('select');
+      decorSelect.className = 'decor-select';
+      const customOpt = document.createElement('option');
+      customOpt.value = '';
+      customOpt.textContent = 'Своя цена (без EGGER)';
+      decorSelect.appendChild(customOpt);
+      EGGER_LDSP.forEach((d, di)=>{
+        const opt = document.createElement('option');
+        opt.value = di;
+        opt.textContent = `${d.code} — ${d.name} (${d.struct})`;
+        decorSelect.appendChild(opt);
+      });
+      decorSelect.value = it.eggerIndex != null ? it.eggerIndex : '';
+
+      const thickSelect = document.createElement('select');
+      thickSelect.className = 'thick-select';
+
+      function refreshThickness(){
+        thickSelect.innerHTML = '';
+        if(decorSelect.value === ''){ thickSelect.disabled = true; return; }
+        thickSelect.disabled = false;
+        const d = EGGER_LDSP[Number(decorSelect.value)];
+        // Толщины берём из самого прайса декора — так корректно показываются
+        // и нестандартные (10, 22, 6, 9, 12… у Lamarty / АМК-Троя / фанеры).
+        Object.keys(d.prices).map(Number).sort((a,b)=>a-b).forEach(t=>{
+          if(d.prices[t] != null){
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = t + ' мм — ' + money(d.prices[t]);
+            thickSelect.appendChild(opt);
+          }
+        });
+        const wantT = it.eggerThickness && d.prices[it.eggerThickness] != null
+          ? it.eggerThickness : Number(thickSelect.options[0].value);
+        thickSelect.value = wantT;
+      }
+      refreshThickness();
+
+      function applyEgger(){
+        if(decorSelect.value === ''){
+          it.eggerIndex = null;
+          it.eggerThickness = null;
+          priceInput.readOnly = false;
+        } else {
+          const d = EGGER_LDSP[Number(decorSelect.value)];
+          const t = Number(thickSelect.value);
+          it.eggerIndex = Number(decorSelect.value);
+          it.eggerThickness = t;
+          it.price = d.prices[t];
+          // brand === '' у материалов из «Распила» (Lamarty/АМК/AGT/5K/фанера);
+          // у декоров Egger поля brand нет — подставляем «ЛДСП Egger».
+          it.name = [d.brand == null ? 'ЛДСП Egger' : d.brand, d.code, d.name].filter(Boolean).join(' ');
+          nameInput.value = it.name;
+          priceInput.value = it.price;
+          priceInput.readOnly = true;
+        }
+        updateComputed(); saveApp();
+      }
+
+      decorSelect.addEventListener('change', ()=>{ refreshThickness(); applyEgger(); });
+      thickSelect.addEventListener('change', applyEgger);
+
+      eggerRow.appendChild(decorSelect);
+      eggerRow.appendChild(thickSelect);
+      nameTd.appendChild(eggerRow);
+    }
+
+    // Countertop material picker — only on the Столешница row (has countertopMaterial set).
+    if(it.countertopMaterial !== undefined){
+      const ctRow = document.createElement('div');
+      ctRow.className = 'egger-row';
+
+      const matSelect = document.createElement('select');
+      matSelect.className = 'decor-select';
+      matSelect.style.flex = '1 1 100%';
+      [
+        {value:'ldsp', label:'ЛДСП (обычный коэффициент)'},
+        {value:'compact', label:'Компакт-плита (обычный коэффициент)'},
+        {value:'acrylic', label:'Акрил — подрядчик (отдельная строка в КП, ×' + state.settings.countertopMarkup + ')'},
+        {value:'quartz', label:'Кварц — подрядчик (отдельная строка в КП, ×' + state.settings.countertopMarkup + ')'},
+      ].forEach(opt=>{
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.label;
+        matSelect.appendChild(o);
+      });
+      matSelect.value = it.countertopMaterial;
+      matSelect.addEventListener('change', ()=>{
+        it.countertopMaterial = matSelect.value;
+        buildItemsTable();
+        updateComputed();
+        saveApp();
+      });
+
+      ctRow.appendChild(matSelect);
+      nameTd.appendChild(ctRow);
+
+      const ctHint = document.createElement('div');
+      ctHint.style.cssText = 'font-size:11px;color:var(--brass-ink);margin-top:3px';
+      ctHint.textContent = 'Цену указывайте по счёту подрядчика.';
+      if(it.countertopMaterial === 'acrylic' || it.countertopMaterial === 'quartz'){
+        nameTd.appendChild(ctHint);
+      }
+    }
+
+    // Facade price catalog picker — on the auto Фасад row and any extra facade rows.
+    if(it.isFacadePicker){
+      const facadeRow = document.createElement('div');
+      facadeRow.className = 'egger-row';
+
+      const facadeSelect = document.createElement('select');
+      facadeSelect.className = 'decor-select';
+      facadeSelect.style.flex = '1 1 100%';
+      const customOpt = document.createElement('option');
+      customOpt.value = '';
+      customOpt.textContent = 'Своя цена (без каталога)';
+      facadeSelect.appendChild(customOpt);
+      FACADE_CATALOG.forEach((f, fi)=>{
+        const opt = document.createElement('option');
+        opt.value = fi;
+        opt.textContent = `${f.name} — ${money(f.price)}/м²`;
+        facadeSelect.appendChild(opt);
+      });
+      facadeSelect.value = it.facadeCatalogIndex != null ? it.facadeCatalogIndex : '';
+
+      const doubleSidedLabel = document.createElement('label');
+      doubleSidedLabel.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;color:var(--walnut);margin-top:6px';
+      const doubleSidedCheckbox = document.createElement('input');
+      doubleSidedCheckbox.type = 'checkbox';
+      doubleSidedCheckbox.checked = !!it.facadeDoubleSided;
+      const doubleSidedText = document.createElement('span');
+      doubleSidedLabel.appendChild(doubleSidedCheckbox);
+      doubleSidedLabel.appendChild(doubleSidedText);
+
+      function refreshDoubleSidedUI(){
+        const catEntry = it.facadeCatalogIndex != null ? FACADE_CATALOG[it.facadeCatalogIndex] : null;
+        const surcharge = catEntry ? FACADE_DOUBLE_SIDED_SURCHARGE[catEntry.type] : null;
+        if(surcharge == null){
+          doubleSidedLabel.style.display = 'none';
+          return;
+        }
+        doubleSidedLabel.style.display = 'flex';
+        doubleSidedText.textContent = (catEntry.type === 'paint' ? 'Покраска' : 'Шпон') + ' с двух сторон (+' + money(surcharge) + '/м²)';
+      }
+      refreshDoubleSidedUI();
+
+      function applyFacadePrice(){
+        const catEntry = it.facadeCatalogIndex != null ? FACADE_CATALOG[it.facadeCatalogIndex] : null;
+        if(!catEntry) return;
+        const surcharge = it.facadeDoubleSided ? (FACADE_DOUBLE_SIDED_SURCHARGE[catEntry.type] || 0) : 0;
+        it.price = catEntry.price + surcharge;
+        priceInput.value = it.price;
+      }
+
+      facadeSelect.addEventListener('change', ()=>{
+        if(facadeSelect.value === ''){
+          it.facadeCatalogIndex = null;
+          priceInput.readOnly = false;
+        } else {
+          it.facadeCatalogIndex = Number(facadeSelect.value);
+          const catEntry = FACADE_CATALOG[it.facadeCatalogIndex];
+          it.name = catEntry.name + (it.facadeDoubleSided ? ' (2 стороны)' : '');
+          nameInput.value = it.name;
+          applyFacadePrice();
+          priceInput.readOnly = true;
+        }
+        refreshDoubleSidedUI();
+        updateComputed(); saveApp();
+      });
+
+      doubleSidedCheckbox.addEventListener('change', ()=>{
+        it.facadeDoubleSided = doubleSidedCheckbox.checked;
+        const catEntry = FACADE_CATALOG[it.facadeCatalogIndex];
+        it.name = catEntry.name + (it.facadeDoubleSided ? ' (2 стороны)' : '');
+        nameInput.value = it.name;
+        applyFacadePrice();
+        updateComputed(); saveApp();
+      });
+
+      facadeRow.appendChild(facadeSelect);
+      nameTd.appendChild(facadeRow);
+      nameTd.appendChild(doubleSidedLabel);
+    }
+
+    // EGGER edge-band category/size picker — only on the auto Кромление row.
+    if(it.auto === 'edge'){
+      const eggerRow = document.createElement('div');
+      eggerRow.className = 'egger-row';
+
+      const catSelect = document.createElement('select');
+      catSelect.className = 'decor-select';
+      const customOpt = document.createElement('option');
+      customOpt.value = '';
+      customOpt.textContent = 'Своя цена (без EGGER)';
+      catSelect.appendChild(customOpt);
+      EGGER_KROMKA.forEach((c, ci)=>{
+        const opt = document.createElement('option');
+        opt.value = ci;
+        opt.textContent = c.category;
+        catSelect.appendChild(opt);
+      });
+      catSelect.value = it.eggerEdgeCategory != null ? it.eggerEdgeCategory : '';
+
+      const sizeSelect = document.createElement('select');
+      sizeSelect.className = 'thick-select';
+
+      function refreshSize(){
+        sizeSelect.innerHTML = '';
+        if(catSelect.value === ''){ sizeSelect.disabled = true; return; }
+        sizeSelect.disabled = false;
+        const c = EGGER_KROMKA[Number(catSelect.value)];
+        Object.keys(c.prices).forEach(size=>{
+          const opt = document.createElement('option');
+          opt.value = size;
+          opt.textContent = size + ' мм — ' + money(c.prices[size]) + '/мп';
+          sizeSelect.appendChild(opt);
+        });
+        const wantSize = it.eggerEdgeSize && c.prices[it.eggerEdgeSize] != null
+          ? it.eggerEdgeSize : sizeSelect.options[0].value;
+        sizeSelect.value = wantSize;
+      }
+      refreshSize();
+
+      function applyEggerEdge(){
+        if(catSelect.value === ''){
+          it.eggerEdgeCategory = null;
+          it.eggerEdgeSize = null;
+          priceInput.readOnly = false;
+          updateComputed(); saveApp();
+        } else {
+          const c = EGGER_KROMKA[Number(catSelect.value)];
+          const size = sizeSelect.value;
+          it.eggerEdgeCategory = Number(catSelect.value);
+          it.eggerEdgeSize = size;
+          it.price = c.prices[size];
+          it.name = `Кромление EGGER ${size} (${c.category})`;
+          nameInput.value = it.name;
+          priceInput.value = it.price;
+          priceInput.readOnly = true;
+          const synced = syncEdgeLaborTo(size);
+          saveApp();
+          // The labor row lives elsewhere in the table — rebuild so its
+          // select/price reflect the auto-matched value.
+          if(synced){ buildItemsTable(); }
+          updateComputed();
+        }
+      }
+
+      catSelect.addEventListener('change', ()=>{ refreshSize(); applyEggerEdge(); });
+      sizeSelect.addEventListener('change', applyEggerEdge);
+
+      eggerRow.appendChild(catSelect);
+      eggerRow.appendChild(sizeSelect);
+      nameTd.appendChild(eggerRow);
+    }
+
+    // Kromka labor price-list picker — only on the auto Кромление (работа) row.
+    if(it.auto === 'edgeLabor'){
+      const laborRow = document.createElement('div');
+      laborRow.className = 'egger-row';
+
+      const laborSelect = document.createElement('select');
+      laborSelect.className = 'decor-select';
+      laborSelect.style.flex = '1 1 100%';
+      const customOpt = document.createElement('option');
+      customOpt.value = '';
+      customOpt.textContent = 'Своя цена (без прайса)';
+      laborSelect.appendChild(customOpt);
+      KROMKA_LABOR_CATALOG.forEach((k, ki)=>{
+        const opt = document.createElement('option');
+        opt.value = ki;
+        opt.textContent = `${k.name} — ${money(k.price)}/мп`;
+        laborSelect.appendChild(opt);
+      });
+      laborSelect.value = it.kromkaLaborIndex != null ? it.kromkaLaborIndex : '';
+
+      laborSelect.addEventListener('change', ()=>{
+        if(laborSelect.value === ''){
+          it.kromkaLaborIndex = null;
+          priceInput.readOnly = false;
+        } else {
+          const k = KROMKA_LABOR_CATALOG[Number(laborSelect.value)];
+          it.kromkaLaborIndex = Number(laborSelect.value);
+          it.price = k.price;
+          it.name = `Кромление (работа) ${k.name}`;
+          nameInput.value = it.name;
+          priceInput.value = it.price;
+          priceInput.readOnly = true;
+        }
+        updateComputed(); saveApp();
+      });
+
+      laborRow.appendChild(laborSelect);
+      nameTd.appendChild(laborRow);
+    }
+  });
+}
+
+// Patches only computed/derived output — never touches the input element
+// the user is currently typing in, so focus and cursor position survive.
+function updateComputed(){
+  const r = recalc();
+
+  state.facade.forEach((row,i)=>{
+    if(facadeRefs[i]) facadeRefs[i].calcTds.area.textContent = fmt((row.h/1000)*(row.w/1000)*row.qty) + ' м²';
+  });
+  $('facadeTotal').textContent = fmt(r.facadeArea) + ' м²';
+  $('facadeBreakdown').innerHTML = r.facadeBreakdown.length > 1
+    ? 'По типам: ' + r.facadeBreakdown.map(x=> `<b>${x.name}</b> — ${fmt(x.area)} м²`).join(' &nbsp;·&nbsp; ')
+    : '';
+
+  state.carcass.forEach((row,i)=>{
+    if(carcassRefs[i]){
+      carcassRefs[i].calcTds.area.textContent = fmt((row.h/1000)*(row.w/1000)*row.qty) + ' м²';
+      carcassRefs[i].calcTds.edge.textContent = fmt((row.h+row.w)*2*row.qty/1000) + ' мп';
+    }
+  });
+  $('carcassAreaTotal').textContent = fmt(r.carcassArea) + ' м²';
+  $('carcassEdgeTotal').textContent = fmt(r.edgeLength) + ' мп';
+  $('sheetAreaLabel').textContent = state.settings.sheetArea;
+  $('sheetsNeeded').textContent = r.sheetsNeeded;
+  $('carcassBreakdown').innerHTML = r.ldspBreakdown.length > 1
+    ? 'По декорам: ' + r.ldspBreakdown.map(x=> `<b>${x.name}</b> — ${x.sheets} лист.`).join(' &nbsp;·&nbsp; ')
+    : '';
+
+  state.countertop.forEach((row,i)=>{
+    if(countertopRefs[i]) countertopRefs[i].calcTds.len.textContent = fmt((row.len/1000)*row.qty) + ' м';
+  });
+  $('countertopTotal').textContent = fmt(r.countertopLen) + ' м';
+  $('stockLenLabel').textContent = state.settings.stockLen;
+  $('countertopPieces').textContent = r.countertopPieces;
+  $('countertopBreakdown').innerHTML = r.countertopBreakdown.length > 1
+    ? 'По материалам: ' + r.countertopBreakdown.map(x=> `<b>${x.name}</b> — ${fmt(x.len)} м, ~${x.pieces} плит.`).join(' &nbsp;·&nbsp; ')
+    : '';
+
+  state.items.forEach((it,i)=>{
+    const ref = itemRefs[i];
+    if(!ref) return;
+    if(isQtyAuto(it)) ref.qtyInput.value = it.qty;
+    const lineSum = (Number(it.qty)||0) * (Number(it.price)||0);
+    if(it.countertopMaterial === 'acrylic' || it.countertopMaterial === 'quartz'){
+      ref.sumTd.innerHTML = '';
+      ref.sumTd.appendChild(document.createTextNode(money(lineSum)));
+      const tag = document.createElement('div');
+      tag.style.cssText = 'font-size:10px;color:var(--brass-ink);font-weight:400;white-space:normal';
+      tag.textContent = '× ' + state.settings.countertopMarkup + ', отдельно в КП';
+      ref.sumTd.appendChild(tag);
+    } else {
+      ref.sumTd.textContent = money(lineSum);
+    }
+  });
+  $('subtotal').textContent = money(r.subtotal);
+  $('countertopFooterRow').style.display = r.countertopSeparateTotal > 0 ? '' : 'none';
+  $('countertopFooterLabel').textContent = 'Столешница (' + r.countertopSeparateLabel + ', подрядчик, ×' + state.settings.countertopMarkup + ')';
+  $('countertopFooterSum').textContent = money(r.countertopSeparateTotal);
+
+  $('barSubtotal').textContent = money(r.subtotal);
+  $('barMarkup').textContent = state.settings.markup;
+  $('barTotal').textContent = money(r.grandTotal);
+  $('barCountertopLine').style.display = r.countertopSeparateTotal > 0 ? '' : 'none';
+  $('barCtMaterial').textContent = r.countertopSeparateLabel;
+  $('barCountertopTotal').textContent = money(r.countertopSeparateTotal);
+
+  updateKpChecklistPreview();
+}
+
+function updateKpChecklistPreview(){
+  const el = $('kpChecklistPreview');
+  if(!el) return;
+  const text = kpChecklistText(state);
+  el.textContent = text || '—';
+  el.classList.toggle('empty', !text);
+}
+
+function updateKpCard(){
+  $('kpNotesInput').value = state.kpNotes || '';
+  const img = $('kpImagePreview');
+  if(state.kpImage){
+    img.src = state.kpImage;
+    img.style.display = 'block';
+    $('kpImageRemoveBtn').style.display = 'inline-flex';
+  } else {
+    img.style.display = 'none';
+    $('kpImageRemoveBtn').style.display = 'none';
+  }
+}
+
+// Full rebuild: only for structural changes (add/remove rows, switch tab, load, reset).
+function buildAndUpdate(){
+  buildFacadeTable();
+  buildCarcassTable();
+  buildCountertopTable();
+  buildItemsTable();
+  $('markup').value = state.settings.markup;
+  $('sheetArea').value = state.settings.sheetArea;
+  $('stockLen').value = state.settings.stockLen;
+  $('countertopMarkup').value = state.settings.countertopMarkup;
+  updateKpCard();
+  updateComputed();
+}
+
+function switchView(){
+  $('productView').style.display = app.activeView === 'product' ? '' : 'none';
+  $('kpView').style.display = app.activeView === 'kp' ? '' : 'none';
+  $('summaryBar').style.display = app.activeView === 'product' ? '' : 'none';
+}
+
+// ---- Tabs ----
+function renderTabs(){
+  const bar = $('tabBar');
+  bar.innerHTML = '';
+  app.products.forEach(p=>{
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (app.activeView === 'product' && p.id === app.activeProductId ? ' active' : '');
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.value = p.name;
+    nameInput.size = Math.max(4, p.name.length);
+    nameInput.addEventListener('input', ()=>{
+      p.name = nameInput.value;
+      nameInput.size = Math.max(4, p.name.length);
+      saveApp();
+      if(app.activeView === 'kp') renderKP();
+    });
+    tab.appendChild(nameInput);
+
+    if(app.products.length > 1){
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'tab-close';
+      closeBtn.textContent = '✕';
+      closeBtn.title = 'Удалить изделие';
+      closeBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(!confirm(`Удалить вкладку «${p.name}»? Данные этого изделия будут потеряны.`)) return;
+        const idx = app.products.indexOf(p);
+        app.products.splice(idx,1);
+        if(app.activeProductId === p.id){
+          app.activeProductId = app.products[Math.max(0, idx-1)].id;
+        }
+        syncState(); saveApp(); buildAndUpdate(); renderTabs(); renderKP();
+      });
+      tab.appendChild(closeBtn);
+    }
+
+    tab.addEventListener('click', ()=>{
+      // Already the active product tab: do nothing, so a click inside the
+      // rename field just places the cursor instead of rebuilding the DOM
+      // (which would immediately steal focus back out of the field).
+      if(app.activeView === 'product' && app.activeProductId === p.id) return;
+      app.activeView = 'product';
+      app.activeProductId = p.id;
+      syncState(); saveApp(); switchView(); buildAndUpdate(); renderTabs();
+    });
+
+    bar.appendChild(tab);
+  });
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'tab-add';
+  addBtn.textContent = '+';
+  addBtn.title = 'Добавить изделие';
+  addBtn.addEventListener('click', ()=>{
+    const p = defaultProduct('Изделие ' + (app.products.length + 1));
+    app.products.push(p);
+    app.activeProductId = p.id;
+    app.activeView = 'product';
+    syncState(); saveApp(); switchView(); buildAndUpdate(); renderTabs();
+  });
+  bar.appendChild(addBtn);
+
+  const kpTab = document.createElement('div');
+  kpTab.className = 'tab tab-kp' + (app.activeView === 'kp' ? ' active' : '');
+  kpTab.textContent = 'КП';
+  kpTab.addEventListener('click', ()=>{
+    if(app.activeView === 'kp') return;
+    app.activeView = 'kp';
+    saveApp(); switchView(); renderKP(); renderTabs();
+  });
+  bar.appendChild(kpTab);
+}
+
+// ---- KP (commercial proposal) ----
+function updateKpTotals(){
+  let grandTotal = 0;
+  app.products.forEach(p=>{ grandTotal += recalcProduct(p).grandTotal; });
+  $('kpGrandTotal').textContent = money(grandTotal);
+  const prepay = grandTotal * (Number(app.kp.prepayPercent)||0) / 100;
+  $('kpPrepaySum').textContent = money(prepay);
+  $('kpRestSum').textContent = money(grandTotal - prepay);
+}
+
+function renderKP(){
+  $('kpOrgName').textContent = app.kp.orgName;
+  $('kpAddress').textContent = app.kp.address;
+  $('kpRequisites').textContent = app.kp.requisites;
+  $('kpPrepay').value = app.kp.prepayPercent;
+  $('kpFooterNote').value = app.kp.footerNote;
+
+  const body = $('kpBody');
+  body.innerHTML = '';
+  let rowNum = 0;
+  app.products.forEach((p)=>{
+    const r = recalcProduct(p);
+    rowNum++;
+    const tr = document.createElement('tr');
+
+    const numTd = document.createElement('td');
+    numTd.textContent = rowNum;
+    tr.appendChild(numTd);
+
+    const nameTd = document.createElement('td');
+    nameTd.textContent = p.name;
+    nameTd.style.fontWeight = '600';
+    tr.appendChild(nameTd);
+
+    const descTd = document.createElement('td');
+    const checklistEl = document.createElement('div');
+    checklistEl.className = 'kp-desc-checklist';
+    checklistEl.textContent = kpChecklistText(p);
+    descTd.appendChild(checklistEl);
+    const descTa = document.createElement('textarea');
+    descTa.value = p.kpNotes || '';
+    descTa.placeholder = 'Доп. заметки...';
+    descTa.addEventListener('input', ()=>{ p.kpNotes = descTa.value; saveApp(); });
+    descTd.appendChild(descTa);
+    tr.appendChild(descTd);
+
+    const imgTd = document.createElement('td');
+    imgTd.className = 'kp-row-photo';
+    const imgHolder = document.createElement('div');
+    if(p.kpImage){
+      const im = document.createElement('img');
+      im.className = 'img-preview';
+      im.style.display = 'block';
+      im.src = p.kpImage;
+      imgHolder.appendChild(im);
+    }
+    imgTd.appendChild(imgHolder);
+
+    const imgFileInput = document.createElement('input');
+    imgFileInput.type = 'file';
+    imgFileInput.accept = 'image/*';
+    imgFileInput.style.display = 'none';
+    imgFileInput.addEventListener('change', (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        p.kpImage = reader.result;
+        imgHolder.innerHTML = '';
+        const im = document.createElement('img');
+        im.className = 'img-preview';
+        im.style.display = 'block';
+        im.src = p.kpImage;
+        imgHolder.appendChild(im);
+        imgLabelText.textContent = 'Заменить';
+        imgRemoveBtn.style.display = 'inline-block';
+        if(state.id === p.id) updateKpCard();
+        saveApp();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    const imgLabel = document.createElement('label');
+    imgLabel.className = 'btn btn-sm no-print';
+    imgLabel.style.cssText = 'cursor:pointer;padding:4px 10px;font-size:11px';
+    const imgLabelText = document.createTextNode(p.kpImage ? 'Заменить' : 'Фото');
+    imgLabel.appendChild(imgLabelText);
+    imgLabel.appendChild(imgFileInput);
+    imgTd.appendChild(imgLabel);
+
+    const imgRemoveBtn = document.createElement('button');
+    imgRemoveBtn.className = 'btn-danger no-print';
+    imgRemoveBtn.style.fontSize = '10px';
+    imgRemoveBtn.style.padding = '2px 6px';
+    imgRemoveBtn.textContent = 'Удалить';
+    imgRemoveBtn.style.display = p.kpImage ? 'inline-block' : 'none';
+    imgRemoveBtn.addEventListener('click', ()=>{
+      p.kpImage = null;
+      imgFileInput.value = '';
+      imgHolder.innerHTML = '';
+      imgLabelText.textContent = 'Фото';
+      imgRemoveBtn.style.display = 'none';
+      if(state.id === p.id) updateKpCard();
+      saveApp();
+    });
+    imgTd.appendChild(imgRemoveBtn);
+    tr.appendChild(imgTd);
+
+    const priceTd = document.createElement('td');
+    priceTd.style.textAlign = 'right';
+    priceTd.style.fontWeight = '700';
+    priceTd.style.whiteSpace = 'nowrap';
+    priceTd.textContent = money(r.total);
+    tr.appendChild(priceTd);
+
+    body.appendChild(tr);
+
+    if(r.countertopSeparateTotal > 0){
+      rowNum++;
+      const ctTr = document.createElement('tr');
+
+      const ctNumTd = document.createElement('td');
+      ctNumTd.textContent = rowNum;
+      ctTr.appendChild(ctNumTd);
+
+      const ctNameTd = document.createElement('td');
+      ctNameTd.textContent = p.name + ' — столешница';
+      ctNameTd.style.fontWeight = '600';
+      ctNameTd.style.color = 'var(--brass-ink)';
+      ctTr.appendChild(ctNameTd);
+
+      const ctDescTd = document.createElement('td');
+      const ctChecklistEl = document.createElement('div');
+      ctChecklistEl.className = 'kp-desc-checklist';
+      ctChecklistEl.style.fontSize = '12px';
+      ctChecklistEl.style.color = 'var(--walnut)';
+      ctChecklistEl.textContent = `Материал: ${r.countertopSeparateLabel}. Изготовление и поставка — подрядчик.`;
+      ctDescTd.appendChild(ctChecklistEl);
+      const ctDescTa = document.createElement('textarea');
+      ctDescTa.value = p.countertopKpNote || '';
+      ctDescTa.placeholder = 'Доп. заметки...';
+      ctDescTa.addEventListener('input', ()=>{ p.countertopKpNote = ctDescTa.value; saveApp(); });
+      ctDescTd.appendChild(ctDescTa);
+      ctTr.appendChild(ctDescTd);
+
+      ctTr.appendChild(document.createElement('td'));
+
+      const ctPriceTd = document.createElement('td');
+      ctPriceTd.style.textAlign = 'right';
+      ctPriceTd.style.fontWeight = '700';
+      ctPriceTd.style.whiteSpace = 'nowrap';
+      ctPriceTd.textContent = money(r.countertopSeparateTotal);
+      ctTr.appendChild(ctPriceTd);
+
+      body.appendChild(ctTr);
+    }
+  });
+
+  updateKpTotals();
+}
+
+// ---- Wiring: dimension/item add buttons ----
+$('addFacade').addEventListener('click', ()=>{
+  const last = state.facade[state.facade.length-1];
+  state.facade.push({h:0,w:0,qty:0, materialId: last ? last.materialId : undefined});
+  buildFacadeTable(); updateComputed(); saveApp();
+});
+$('addCarcass').addEventListener('click', ()=>{
+  const last = state.carcass[state.carcass.length-1];
+  state.carcass.push({h:0,w:0,qty:0, materialId: last ? last.materialId : undefined});
+  buildCarcassTable(); updateComputed(); saveApp();
+});
+$('addCountertop').addEventListener('click', ()=>{
+  const last = state.countertop[state.countertop.length-1];
+  state.countertop.push({len:0,w:600,qty:0, materialId: last ? last.materialId : undefined});
+  buildCountertopTable(); updateComputed(); saveApp();
+});
+$('addItem').addEventListener('click', ()=>{ state.items.push(newItemRow()); buildItemsTable(); updateComputed(); saveApp(); });
+
+// Adding an extra material creates both the cost-item line (with its own
+// catalog picker) and a fresh dimension row pre-tagged to it, right where
+// the user is about to type that decor's part sizes.
+$('addFacadeMaterial').addEventListener('click', ()=>{
+  const item = {id: makeId(), name:'Фасад МДФ краска', unit:'м²', price:7200, qty:0, isFacadePicker:true, facadeCatalogIndex:null};
+  state.items.push(item);
+  state.facade.push({h:0, w:0, qty:0, materialId:item.id});
+  buildAndUpdate(); saveApp();
+});
+$('addLdspMaterial').addEventListener('click', ()=>{
+  const item = {id: makeId(), name:'ЛДСП', unit:'лист', price:4100, qty:0, isLdspPicker:true, eggerIndex:null, eggerThickness:null};
+  state.items.push(item);
+  state.carcass.push({h:0, w:0, qty:0, materialId:item.id});
+  buildAndUpdate(); saveApp();
+});
+$('addCountertopMaterial').addEventListener('click', ()=>{
+  const item = {id: makeId(), name:'Столешница', unit:'шт', price:16000, qty:0, countertopMaterial:'ldsp'};
+  state.items.push(item);
+  state.countertop.push({len:0, w:600, qty:0, materialId:item.id});
+  buildAndUpdate(); saveApp();
+});
+
+$('btnDefaults').addEventListener('click', ()=>{
+  if(!confirm('Сбросить все позиции статей затрат и цены к значениям по умолчанию? Введённые количества для ручных позиций будут обнулены, доп. декоры/материалы удалены.')) return;
+  state.items = DEFAULT_ITEMS.map(cloneDefaultItem);
+  state.facade.forEach(r=> delete r.materialId);
+  state.carcass.forEach(r=> delete r.materialId);
+  state.countertop.forEach(r=> delete r.materialId);
+  buildAndUpdate(); saveApp();
+});
+
+$('markup').addEventListener('input', e=>{ state.settings.markup = Number(e.target.value)||0; updateComputed(); saveApp(); });
+$('sheetArea').addEventListener('input', e=>{ state.settings.sheetArea = Number(e.target.value)||0.1; updateComputed(); saveApp(); });
+$('stockLen').addEventListener('input', e=>{ state.settings.stockLen = Number(e.target.value)||0.1; updateComputed(); saveApp(); });
+$('countertopMarkup').addEventListener('input', e=>{ state.settings.countertopMarkup = Number(e.target.value)||0; updateComputed(); saveApp(); });
+
+$('kpNotesInput').addEventListener('input', e=>{ state.kpNotes = e.target.value; saveApp(); });
+$('kpImageInput').addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{ state.kpImage = reader.result; updateKpCard(); saveApp(); };
+  reader.readAsDataURL(file);
+});
+$('kpImageRemoveBtn').addEventListener('click', ()=>{
+  state.kpImage = null;
+  $('kpImageInput').value = '';
+  updateKpCard(); saveApp();
+});
+
+// ---- Wiring: KP view meta fields ----
+// orgName/address/requisites are fixed business details, shown read-only in
+// the KP output (no longer editable there) — kpFooterNote and the prepay
+// percent remain per-quote editable fields.
+$('kpFooterNote').addEventListener('input', e=>{ app.kp.footerNote = e.target.value; saveApp(); });
+$('kpPrepay').addEventListener('input', e=>{ app.kp.prepayPercent = Number(e.target.value)||0; updateKpTotals(); saveApp(); });
+$('btnPrint').addEventListener('click', ()=> window.print());
+
+// ---- Document title field (drives the browser tab title and export filenames) ----
+let liveDocumentTitle = document.title;
+function updateDocumentTitleDisplay(){
+  const t = (app.documentTitle || '').trim();
+  liveDocumentTitle = t ? `${t} — СРЕДА (внутренний)` : 'Калькулятор себестоимости изделия — СРЕДА (внутренний)';
+  document.title = liveDocumentTitle;
+}
+
+function sanitizeFileNamePart(s){
+  return String(s || '').replace(/[\\/:*?"<>|]/g, ' ').trim().replace(/\s+/g, ' ');
+}
+
+// Blocks a save/export action until the required title field is filled,
+// flashing it red and focusing it instead of silently exporting an
+// unlabeled file.
+function requireDocumentTitle(){
+  const t = (app.documentTitle || '').trim();
+  const el = $('documentTitle');
+  if(!t){
+    el.classList.add('input-invalid');
+    el.focus();
+    alert('Заполните «Название документа» вверху страницы — оно используется в имени файла при сохранении.');
+    return null;
+  }
+  el.classList.remove('input-invalid');
+  return t;
+}
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+// ---- Autosave to a real file on disk (File System Access API) ----
+// The user picks a destination .html file once; every change after that is
+// written straight to it (debounced), on top of — not instead of — the
+// existing localStorage snapshot and the manual "Скачать копию" download.
+// Chrome/Edge only; unsupported browsers get an explanatory disabled button.
+let autosaveHandle = null;
+let autosaveTimer = null;
+let autosaveInFlight = false;
+let autosavePending = false;
+let autosaveLastSavedLabel = '';
+
+function autosaveSupported(){
+  return typeof window.showSaveFilePicker === 'function';
+}
+
+function updateAutosaveUI(){
+  const btn = $('btnAutosave');
+  const status = $('autosaveStatus');
+  if(!autosaveSupported()){
+    btn.textContent = 'Автосохранение недоступно';
+    btn.disabled = true;
+    status.textContent = 'Поддерживается только в Chrome/Edge на компьютере. Используйте «Скачать копию инструмента» ниже.';
+    return;
+  }
+  btn.disabled = false;
+  if(autosaveHandle){
+    btn.textContent = 'Отключить автосохранение';
+    status.textContent = autosaveInFlight
+      ? 'Сохранение…'
+      : `Включено — ${autosaveHandle.name}` + (autosaveLastSavedLabel ? `, сохранено в ${autosaveLastSavedLabel}` : '');
+  } else {
+    btn.textContent = 'Включить автосохранение…';
+    status.textContent = '';
+  }
+}
+
+async function toggleAutosave(){
+  if(autosaveHandle){
+    autosaveHandle = null;
+    clearTimeout(autosaveTimer);
+    updateAutosaveUI();
+    return;
+  }
+  const title = requireDocumentTitle();
+  if(!title) return;
+  if(!autosaveSupported()){
+    updateAutosaveUI();
+    return;
+  }
+  try{
+    const handle = await window.showSaveFilePicker({
+      suggestedName: `${sanitizeFileNamePart(title)} ${todayStr()}.html`,
+      types: [{description: 'HTML', accept: {'text/html': ['.html']}}]
+    });
+    autosaveHandle = handle;
+    updateAutosaveUI();
+    await writeAutosave();
+  }catch(e){
+    if(e.name !== 'AbortError') alert('Не удалось подключить автосохранение: ' + e.message);
+  }
+}
+
+function scheduleAutosave(){
+  if(!autosaveHandle) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(writeAutosave, 1500);
+}
+
+async function writeAutosave(){
+  if(!autosaveHandle) return;
+  if(autosaveInFlight){ autosavePending = true; return; }
+  autosaveInFlight = true;
+  updateAutosaveUI();
+  try{
+    const seedEl = document.getElementById('appSeed');
+    const prevSeedText = seedEl.textContent;
+    seedEl.textContent = JSON.stringify({id: makeId(), app});
+    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    seedEl.textContent = prevSeedText;
+
+    const writable = await autosaveHandle.createWritable();
+    await writable.write(html);
+    await writable.close();
+    autosaveLastSavedLabel = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+  }catch(e){
+    console.error('Autosave failed', e);
+    autosaveHandle = null;
+    alert('Автосохранение отключено из-за ошибки записи: ' + e.message);
+  }
+  autosaveInFlight = false;
+  updateAutosaveUI();
+  if(autosavePending){
+    autosavePending = false;
+    scheduleAutosave();
+  }
+}
+
+$('btnAutosave').addEventListener('click', toggleAutosave);
+updateAutosaveUI();
+
+// The browser's own print header/footer (if the user has it enabled) shows
+// document.title — the KP itself must not leak the internal document name
+// there, so print always shows just the brand, never app.documentTitle.
+window.addEventListener('beforeprint', ()=>{
+  document.title = 'СРЕДА';
+});
+window.addEventListener('afterprint', ()=>{
+  document.title = liveDocumentTitle;
+});
+
+// ---- Minimal dependency-free .xlsx writer (ZIP, store method) ----
+// No external library, no CDN — the whole workbook is hand-built XML,
+// packed into an uncompressed ZIP (a valid xlsx Excel opens fine).
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes){
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function strToBytes(str){ return new TextEncoder().encode(str); }
+function xmlEscape(s){
+  return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&apos;','"':'&quot;'}[c]));
+}
+function colLetter(n){
+  let s = '', num = n + 1;
+  while(num > 0){
+    const rem = (num - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    num = Math.floor((num - 1) / 26);
+  }
+  return s;
+}
+
+function createZip(files){
+  const encoder = new TextEncoder();
+  const localParts = [], centralParts = [];
+  let offset = 0;
+  files.forEach(f=>{
+    const nameBytes = encoder.encode(f.name);
+    const data = f.data;
+    const crc = crc32(data);
+    const size = data.length;
+
+    const local = new Uint8Array(30 + nameBytes.length + size);
+    const dv = new DataView(local.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true);
+    dv.setUint16(6, 0, true);
+    dv.setUint16(8, 0, true);
+    dv.setUint16(10, 0, true);
+    dv.setUint16(12, 0x21, true);
+    dv.setUint32(14, crc, true);
+    dv.setUint32(18, size, true);
+    dv.setUint32(22, size, true);
+    dv.setUint16(26, nameBytes.length, true);
+    dv.setUint16(28, 0, true);
+    local.set(nameBytes, 30);
+    local.set(data, 30 + nameBytes.length);
+    localParts.push(local);
+
+    const central = new Uint8Array(46 + nameBytes.length);
+    const cdv = new DataView(central.buffer);
+    cdv.setUint32(0, 0x02014b50, true);
+    cdv.setUint16(4, 20, true);
+    cdv.setUint16(6, 20, true);
+    cdv.setUint16(8, 0, true);
+    cdv.setUint16(10, 0, true);
+    cdv.setUint16(12, 0, true);
+    cdv.setUint16(14, 0x21, true);
+    cdv.setUint32(16, crc, true);
+    cdv.setUint32(20, size, true);
+    cdv.setUint32(24, size, true);
+    cdv.setUint16(28, nameBytes.length, true);
+    cdv.setUint16(30, 0, true);
+    cdv.setUint16(32, 0, true);
+    cdv.setUint16(34, 0, true);
+    cdv.setUint16(36, 0, true);
+    cdv.setUint32(38, 0, true);
+    cdv.setUint32(42, offset, true);
+    central.set(nameBytes, 46);
+    centralParts.push(central);
+
+    offset += local.length;
+  });
+
+  const centralSize = centralParts.reduce((s,p)=>s+p.length, 0);
+  const centralOffset = offset;
+  const end = new Uint8Array(22);
+  const edv = new DataView(end.buffer);
+  edv.setUint32(0, 0x06054b50, true);
+  edv.setUint16(4, 0, true);
+  edv.setUint16(6, 0, true);
+  edv.setUint16(8, files.length, true);
+  edv.setUint16(10, files.length, true);
+  edv.setUint32(12, centralSize, true);
+  edv.setUint32(16, centralOffset, true);
+  edv.setUint16(20, 0, true);
+
+  const all = [...localParts, ...centralParts, end];
+  const totalLen = all.reduce((s,p)=>s+p.length, 0);
+  const out = new Uint8Array(totalLen);
+  let pos = 0;
+  all.forEach(p=>{ out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+function buildSheetXml(rows, colWidths){
+  let rowsXml = '';
+  rows.forEach((row, ri)=>{
+    let cellsXml = '';
+    row.cells.forEach((cell, ci)=>{
+      if(!cell) return;
+      const ref = colLetter(ci) + (ri+1);
+      const styleAttr = row.bold ? ' s="1"' : '';
+      if(cell.t === 'f'){
+        cellsXml += `<c r="${ref}"${styleAttr}><f>${xmlEscape(cell.formula)}</f><v>${cell.v}</v></c>`;
+      } else if(cell.t === 'n'){
+        if(cell.v === '' || cell.v == null) return;
+        cellsXml += `<c r="${ref}"${styleAttr}><v>${cell.v}</v></c>`;
+      } else {
+        if(cell.v === '' || cell.v == null) return;
+        cellsXml += `<c r="${ref}" t="inlineStr"${styleAttr}><is><t xml:space="preserve">${xmlEscape(cell.v)}</t></is></c>`;
+      }
+    });
+    rowsXml += `<row r="${ri+1}">${cellsXml}</row>`;
+  });
+  const colsXml = colWidths
+    ? `<cols>${colWidths.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`
+    : '';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`
+    + `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${colsXml}<sheetData>${rowsXml}</sheetData></worksheet>`;
+}
+
+// Excel sheet names: <=31 chars, no : \ / ? * [ ], must be unique.
+function sanitizeSheetName(name, used){
+  let clean = String(name || 'Лист').replace(/[:\\\/?*\[\]]/g, ' ').trim().slice(0, 31) || 'Лист';
+  let candidate = clean;
+  let n = 2;
+  while(used.has(candidate)){
+    const suffix = ' (' + n + ')';
+    candidate = clean.slice(0, 31 - suffix.length) + suffix;
+    n++;
+  }
+  used.add(candidate);
+  return candidate;
+}
+
+// sheets: [{name, rows, colWidths}]
+function buildXlsx(sheets){
+  const used = new Set();
+  const namedSheets = sheets.map(sh => ({...sh, safeName: sanitizeSheetName(sh.name, used)}));
+
+  const sheetOverrides = namedSheets.map((_,i)=>
+    `<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
+  ).join('');
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`
+    + `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">`
+    + `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>`
+    + `<Default Extension="xml" ContentType="application/xml"/>`
+    + `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>`
+    + sheetOverrides
+    + `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>`
+    + `</Types>`;
+
+  const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`
+    + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+    + `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>`
+    + `</Relationships>`;
+
+  const sheetEls = namedSheets.map((sh,i)=>
+    `<sheet name="${xmlEscape(sh.safeName)}" sheetId="${i+1}" r:id="rId${i+1}"/>`
+  ).join('');
+  const workbook = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`
+    + `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`
+    + `<sheets>${sheetEls}</sheets>`
+    + `<calcPr calcId="0" fullCalcOnLoad="1"/>`
+    + `</workbook>`;
+
+  const stylesRid = 'rId' + (namedSheets.length + 1);
+  const sheetRelEls = namedSheets.map((_,i)=>
+    `<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`
+  ).join('');
+  const workbookRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`
+    + `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+    + sheetRelEls
+    + `<Relationship Id="${stylesRid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`
+    + `</Relationships>`;
+
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n`
+    + `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`
+    + `<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>`
+    + `<fills count="1"><fill><patternFill patternType="none"/></fill></fills>`
+    + `<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>`
+    + `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>`
+    + `<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>`
+    + `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>`
+    + `</styleSheet>`;
+
+  const files = [
+    {name: '[Content_Types].xml', data: strToBytes(contentTypes)},
+    {name: '_rels/.rels', data: strToBytes(rootRels)},
+    {name: 'xl/workbook.xml', data: strToBytes(workbook)},
+    {name: 'xl/_rels/workbook.xml.rels', data: strToBytes(workbookRels)},
+    {name: 'xl/styles.xml', data: strToBytes(styles)},
+    ...namedSheets.map((sh,i)=>({name: `xl/worksheets/sheet${i+1}.xml`, data: strToBytes(buildSheetXml(sh.rows, sh.colWidths))})),
+  ];
+  return createZip(files);
+}
+
+function downloadBytes(bytes, filename, mime){
+  const blob = new Blob([bytes], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 1000);
+}
+
+function buildKpSheetRows(){
+  const s = (v) => ({v: v==null?'':String(v), t:'s'});
+  const n = (v) => ({v, t:'n'});
+  const rows = [];
+
+  rows.push({bold:true, cells:[s('СРЕДА')]});
+  rows.push({bold:false, cells:[s('мебель на заказ · собственное производство · Новороссийск')]});
+  rows.push({bold:false, cells:[]});
+  rows.push({bold:true, cells:[s('Коммерческое предложение')]});
+  rows.push({bold:false, cells:[s(app.kp.orgName)]});
+  rows.push({bold:false, cells:[s(app.kp.address)]});
+  rows.push({bold:false, cells:[s(app.kp.requisites)]});
+  rows.push({bold:false, cells:[]});
+  rows.push({bold:true, cells:[s('№'), s('Наименование'), s('Описание'), s('Цена, ₽')]});
+
+  let grandTotal = 0, rowNum = 0;
+  app.products.forEach(p=>{
+    const r = recalcProduct(p);
+    grandTotal += r.grandTotal;
+    rowNum++;
+    const desc = [kpChecklistText(p), p.kpNotes].filter(Boolean).join('; ');
+    rows.push({bold:false, cells:[n(rowNum), s(p.name), s(desc), n(Math.round(r.total))]});
+    if(r.countertopSeparateTotal > 0){
+      rowNum++;
+      rows.push({bold:false, cells:[
+        n(rowNum), s(p.name + ' — столешница'),
+        s(`Материал: ${r.countertopSeparateLabel}. Изготовление и поставка — подрядчик.`),
+        n(Math.round(r.countertopSeparateTotal)),
+      ]});
+    }
+  });
+
+  const prepay = grandTotal * (Number(app.kp.prepayPercent)||0) / 100;
+  rows.push({bold:false, cells:[]});
+  rows.push({bold:true, cells:[s('Итого:'), s(''), s(''), n(Math.round(grandTotal))]});
+  rows.push({bold:false, cells:[s(`Предоплата (${app.kp.prepayPercent}%):`), s(''), s(''), n(Math.round(prepay))]});
+  rows.push({bold:false, cells:[s('Остаток:'), s(''), s(''), n(Math.round(grandTotal - prepay))]});
+
+  if(app.kp.footerNote){
+    rows.push({bold:false, cells:[]});
+    app.kp.footerNote.split('\n').forEach(line=>{
+      if(line) rows.push({bold:false, cells:[s(line)]});
+    });
+  }
+  return rows;
+}
+
+// Full internal cost breakdown for one product: dimension tables (with
+// per-row material, for products with several decors) plus the cost-items
+// table and totals — the "просчёт" behind that product's price in the КП.
+// Builds a *live* worksheet for one product: dimension tables and the cost
+// table are wired with real Excel formulas (=A2/1000*B2/1000*C2, =SUM(...),
+// =SUMIF(...) per material, etc.) — not just the computed numbers — so
+// someone can open the file later, tweak a size or price for a specific
+// order, and have everything downstream recalculate on its own.
+function buildProductFormulaSheet(p){
+  const s = (v) => ({v: v==null?'':String(v), t:'s'});
+  const nRaw = (v) => ({v, t:'n'});
+  const fx = (formula, cached) => ({t:'f', formula, v: cached});
+  const rows = [];
+  const push = (bold, cells) => { rows.push({bold, cells}); return rows.length; };
+  const r = recalcProduct(p);
+
+  const ldspItems = p.items.filter(it=>it.isLdspPicker);
+  const facadeItems = p.items.filter(it=>it.isFacadePicker);
+
+  push(true, [s(p.name + ' — просчёт себестоимости (с формулами)')]);
+  push(false, []);
+
+  push(true, [s('Настройки')]);
+  const markupRow = push(false, [s('Коэффициент наценки'), nRaw(p.settings.markup)]);
+  const ctMarkupRow = push(false, [s('Коэфф. акрил/кварц столешниц'), nRaw(p.settings.countertopMarkup)]);
+  const sheetAreaRow = push(false, [s('Площадь листа ЛДСП, м²'), nRaw(p.settings.sheetArea)]);
+  const stockLenRow = push(false, [s('Длина плиты столешницы, м'), nRaw(p.settings.stockLen)]);
+  push(false, []);
+  const markupCell = 'B' + markupRow;
+  const ctMarkupCell = 'B' + ctMarkupRow;
+  const sheetAreaCell = 'B' + sheetAreaRow;
+  const stockLenCell = 'B' + stockLenRow;
+
+  // --- Фасады ---
+  // Column F is a numeric group index (not the material name) so the SUMIF
+  // formulas below still tell decors apart even if two of them share the
+  // same (unrenamed) name — text matching alone would silently merge them.
+  push(true, [s('Фасады')]);
+  push(true, [s('Высота, мм'), s('Ширина, мм'), s('Кол-во'), s('м²'), s('Материал'), s('№ группы (для формул)')]);
+  const facadeFirst = rows.length + 1;
+  p.facade.forEach(row=>{
+    if(!row.h && !row.w && !row.qty) return;
+    const mat = resolveMaterialTarget(row, facadeItems);
+    const idx = mat ? facadeItems.indexOf(mat) + 1 : '';
+    const rn = rows.length + 1;
+    push(false, [nRaw(row.h), nRaw(row.w), nRaw(row.qty),
+      fx(`A${rn}/1000*B${rn}/1000*C${rn}`, fmt((row.h/1000)*(row.w/1000)*row.qty)),
+      s(mat ? mat.name : ''), mat ? nRaw(idx) : s('')]);
+  });
+  const facadeLast = rows.length;
+  const facadeHasRows = facadeLast >= facadeFirst;
+  if(facadeHasRows){
+    push(true, [s('Итого площадь фасадов'), s(''), s(''), fx(`SUM(D${facadeFirst}:D${facadeLast})`, fmt(r.facadeArea))]);
+  } else {
+    push(true, [s('Итого площадь фасадов'), s(''), s(''), nRaw(0)]);
+  }
+  push(false, []);
+
+  // --- Корпус ---
+  // Same numeric-group-index trick in column G, for the same reason as Фасады.
+  push(true, [s('Корпус (детали из ЛДСП)')]);
+  push(true, [s('Высота, мм'), s('Ширина, мм'), s('Кол-во'), s('м²'), s('мп кромки'), s('Материал'), s('№ группы (для формул)')]);
+  const carcassFirst = rows.length + 1;
+  p.carcass.forEach(row=>{
+    if(!row.h && !row.w && !row.qty) return;
+    const mat = resolveMaterialTarget(row, ldspItems);
+    const idx = mat ? ldspItems.indexOf(mat) + 1 : '';
+    const rn = rows.length + 1;
+    push(false, [nRaw(row.h), nRaw(row.w), nRaw(row.qty),
+      fx(`A${rn}/1000*B${rn}/1000*C${rn}`, fmt((row.h/1000)*(row.w/1000)*row.qty)),
+      fx(`(A${rn}+B${rn})*2*C${rn}/1000`, fmt((row.h+row.w)*2*row.qty/1000)),
+      s(mat ? mat.name : ''), mat ? nRaw(idx) : s('')]);
+  });
+  const carcassLast = rows.length;
+  const carcassHasRows = carcassLast >= carcassFirst;
+  if(carcassHasRows){
+    push(true, [s('Итого'), s(''), s(''),
+      fx(`SUM(D${carcassFirst}:D${carcassLast})`, fmt(r.carcassArea)),
+      fx(`SUM(E${carcassFirst}:E${carcassLast})`, fmt(r.edgeLength))]);
+  } else {
+    push(true, [s('Итого'), s(''), s(''), nRaw(0), nRaw(0)]);
+  }
+  const edgeLengthCell = carcassHasRows ? `SUM(E${carcassFirst}:E${carcassLast})` : '0';
+  push(false, []);
+
+  // --- Столешница ---
+  push(true, [s('Столешница')]);
+  push(true, [s('Длина, мм'), s('Ширина, мм'), s('Кол-во'), s('пог.м'), s('Материал')]);
+  const ctFirst = rows.length + 1;
+  p.countertop.forEach(row=>{
+    if(!row.len && !row.qty) return;
+    const mat = resolveMaterialTarget(row, p.items.filter(it=>it.countertopMaterial !== undefined));
+    const rn = rows.length + 1;
+    push(false, [nRaw(row.len), nRaw(row.w), nRaw(row.qty),
+      fx(`A${rn}/1000*C${rn}`, fmt((row.len/1000)*row.qty)),
+      s(mat ? mat.name : '')]);
+  });
+  const ctLast = rows.length;
+  const ctHasRows = ctLast >= ctFirst;
+  if(ctHasRows){
+    push(true, [s('Итого погонных метров'), s(''), s(''), fx(`SUM(D${ctFirst}:D${ctLast})`, fmt(r.countertopLen))]);
+    push(false, [s('Рекомендуемое кол-во плит всего'), s(''), s(''),
+      fx(`ROUNDUP(SUM(D${ctFirst}:D${ctLast})/${stockLenCell},0)`, r.countertopPieces)]);
+  } else {
+    push(true, [s('Итого погонных метров'), s(''), s(''), nRaw(0)]);
+    push(false, [s('Рекомендуемое кол-во плит всего'), s(''), s(''), nRaw(0)]);
+  }
+  push(false, []);
+
+  // --- Статьи затрат ---
+  push(true, [s('Статьи затрат')]);
+  push(true, [s('Наименование'), s('Кол-во'), s('Ед.'), s('Цена, ₽'), s('Сумма, ₽'), s('Тип столешницы')]);
+  const itemsFirst = rows.length + 1;
+  // Row numbers for every item are known up front (one row each, pushed in
+  // order below), so "Распиловка" can reference *all* ЛДСП rows regardless
+  // of whether a decor was added after it in the list.
+  const itemRowOf = p.items.map((it,i)=> itemsFirst + i);
+  const ldspQtyCells = p.items
+    .map((it,i)=> it.isLdspPicker ? 'B' + itemRowOf[i] : null)
+    .filter(Boolean);
+  p.items.forEach((it,i)=>{
+    const rn = itemRowOf[i];
+    let qtyCell;
+    if(it.isLdspPicker){
+      const idx = ldspItems.indexOf(it) + 1;
+      const qtyFormula = carcassHasRows
+        ? (ldspItems.length > 1
+            ? `ROUNDUP(SUMIF(G${carcassFirst}:G${carcassLast},${idx},D${carcassFirst}:D${carcassLast})/${sheetAreaCell},0)`
+            : `ROUNDUP(SUM(D${carcassFirst}:D${carcassLast})/${sheetAreaCell},0)`)
+        : '0';
+      qtyCell = fx(qtyFormula, it.qty);
+    } else if(it.isFacadePicker){
+      const idx = facadeItems.indexOf(it) + 1;
+      const qtyFormula = facadeHasRows
+        ? (facadeItems.length > 1
+            ? `SUMIF(F${facadeFirst}:F${facadeLast},${idx},D${facadeFirst}:D${facadeLast})`
+            : `SUM(D${facadeFirst}:D${facadeLast})`)
+        : '0';
+      qtyCell = fx(qtyFormula, it.qty);
+    } else if(it.auto === 'edge' || it.auto === 'edgeLabor'){
+      qtyCell = fx(edgeLengthCell, it.qty);
+    } else if(it.auto === 'cut'){
+      qtyCell = ldspQtyCells.length ? fx(`SUM(${ldspQtyCells.join(',')})`, it.qty) : nRaw(it.qty);
+    } else {
+      qtyCell = nRaw(it.qty);
+    }
+    const ctTag = (it.countertopMaterial === 'acrylic' || it.countertopMaterial === 'quartz') ? it.countertopMaterial : '';
+    push(false, [s(it.name), qtyCell, s(it.unit), nRaw(it.price),
+      fx(`B${rn}*D${rn}`, Math.round((Number(it.qty)||0)*(Number(it.price)||0))),
+      s(ctTag)]);
+  });
+  const itemsLast = rows.length;
+  push(false, []);
+
+  const subtotalFormula = `SUMPRODUCT((F${itemsFirst}:F${itemsLast}<>"acrylic")*(F${itemsFirst}:F${itemsLast}<>"quartz")*E${itemsFirst}:E${itemsLast})`;
+  const subtotalRow = push(true, [s('Подытог (себестоимость, без столешниц-подрядчика)'), s(''), s(''), s(''), fx(subtotalFormula, Math.round(r.subtotal))]);
+  const subtotalCell = 'E' + subtotalRow;
+  const totalRow = push(true, [s('Итого (без столешниц-подрядчика)'), s(''), s(''), s(''), fx(`${subtotalCell}*${markupCell}`, Math.round(r.total))]);
+  const totalCell = 'E' + totalRow;
+
+  const ctSeparateFormula = `SUMPRODUCT(((F${itemsFirst}:F${itemsLast}="acrylic")+(F${itemsFirst}:F${itemsLast}="quartz"))*E${itemsFirst}:E${itemsLast})*${ctMarkupCell}`;
+  const ctSeparateRow = push(false, [s('Столешница (акрил/кварц, подрядчик, ×коэфф.)'), s(''), s(''), s(''), fx(ctSeparateFormula, Math.round(r.countertopSeparateTotal))]);
+  const ctSeparateCell = 'E' + ctSeparateRow;
+  push(true, [s('ИТОГО'), s(''), s(''), s(''), fx(`${totalCell}+${ctSeparateCell}`, Math.round(r.grandTotal))]);
+
+  push(false, []);
+  push(false, [s('Строки с формулами можно смело менять под конкретный заказ — суммы и итоги пересчитаются сами.')]);
+
+  return rows;
+}
+
+function exportKpToExcel(){
+  const title = requireDocumentTitle();
+  if(!title) return;
+  const sheets = [{name:'КП', rows: buildKpSheetRows(), colWidths:[12, 30, 55, 16]}];
+  app.products.forEach(p=>{
+    sheets.push({name: p.name, rows: buildProductFormulaSheet(p), colWidths:[16, 16, 10, 12, 12, 26, 12]});
+  });
+  const bytes = buildXlsx(sheets);
+  downloadBytes(bytes, `${sanitizeFileNamePart(title)} — КП ${todayStr()}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+
+function exportProductToExcel(){
+  const title = requireDocumentTitle();
+  if(!title) return;
+  const sheets = [{name: state.name, rows: buildProductFormulaSheet(state), colWidths:[16, 16, 10, 12, 12, 26, 12]}];
+  const bytes = buildXlsx(sheets);
+  downloadBytes(bytes, `${sanitizeFileNamePart(title)} — ${sanitizeFileNamePart(state.name)} ${todayStr()}.xlsx`, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+
+function exportToolCopy(){
+  const title = requireDocumentTitle();
+  if(!title) return;
+  const seedEl = document.getElementById('appSeed');
+  const prevSeedText = seedEl.textContent;
+  seedEl.textContent = JSON.stringify({id: makeId(), app});
+  const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  seedEl.textContent = prevSeedText;
+
+  const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${sanitizeFileNamePart(title)} ${todayStr()}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=> URL.revokeObjectURL(url), 1000);
+}
+
+$('btnExportExcel').addEventListener('click', exportKpToExcel);
+$('btnExportProductExcel').addEventListener('click', exportProductToExcel);
+$('btnExportToolCopy').addEventListener('click', exportToolCopy);
+
+// ---- Whole-KP save/load ----
+function renderSaves(){
+  const list = loadSaves();
+  const box = $('savesList');
+  box.innerHTML = '';
+  if(list.length === 0){
+    box.innerHTML = '<div class="hint" style="margin:0">Пока нет сохранённых КП.</div>';
+    return;
+  }
+  list.forEach((s, i)=>{
+    const chip = document.createElement('div');
+    chip.className = 'save-chip';
+    const label = document.createElement('span');
+    label.className = 'load-btn';
+    label.textContent = s.name;
+    label.addEventListener('click', ()=>{
+      if(!confirm('Загрузить сохранённое КП? Текущие вкладки будут заменены.')) return;
+      app = JSON.parse(JSON.stringify(s.data));
+      if(!app.products || !app.products.length) app = defaultApp();
+      if(app.documentTitle === undefined) app.documentTitle = '';
+      app.activeProductId = app.products[0].id;
+      app.activeView = 'product';
+      syncState(); saveApp(); switchView(); buildAndUpdate(); renderTabs(); renderKP();
+      $('documentTitle').value = app.documentTitle || '';
+      updateDocumentTitleDisplay();
+    });
+    const del = document.createElement('button');
+    del.textContent = '✕';
+    del.title = 'Удалить сохранённое КП';
+    del.addEventListener('click', ()=>{
+      const l2 = loadSaves();
+      l2.splice(i,1);
+      persistSaves(l2);
+      renderSaves();
+    });
+    chip.appendChild(label);
+    chip.appendChild(del);
+    box.appendChild(chip);
+  });
+}
+
+$('btnSaveAs').addEventListener('click', ()=>{
+  const name = prompt('Название для сохранения (например, имя клиента):');
+  if(!name) return;
+  const list = loadSaves();
+  list.push({name, savedAt: new Date().toISOString(), data: JSON.parse(JSON.stringify(app))});
+  persistSaves(list);
+  renderSaves();
+});
+
+$('btnReset').addEventListener('click', ()=>{
+  if(!confirm('Начать новое КП? Текущие вкладки будут заменены пустым изделием.')) return;
+  app = defaultApp();
+  syncState(); saveApp(); switchView(); buildAndUpdate(); renderTabs(); renderKP();
+  $('documentTitle').value = '';
+  $('documentTitle').classList.remove('input-invalid');
+  updateDocumentTitleDisplay();
+});
+
+$('documentTitle').addEventListener('input', e=>{
+  app.documentTitle = e.target.value;
+  if(e.target.value.trim()) $('documentTitle').classList.remove('input-invalid');
+  updateDocumentTitleDisplay();
+  saveApp();
+});
+
+$('documentTitle').value = app.documentTitle || '';
+updateDocumentTitleDisplay();
+switchView();
+buildAndUpdate();
+renderTabs();
+renderKP();
+renderSaves();
+</script>
+</body>
+</html>

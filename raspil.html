@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор услуг — распил, кромление, присадка, пазование | СРЕДА</title>
+<meta name="description" content="Автономный калькулятор стоимости работ и материалов: раскрой, кромление, присадка, пазование. База материалов: Egger, Lamarty, AGT, 5K, фанера, АМК-Троя.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Prata&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bone:#F4EEE3; --bone-2:#FBF7EF; --cream:#EFE6D6;
+  --espresso:#20180F; --espresso-2:#2C2116;
+  --ink:#1E1710; --walnut:#6A4A2E; --oak:#B98A54;
+  --brass:#B08444; --brass-lt:#C79C5C; --taupe:#7E6E58; --brass-ink:#8C6936;
+  --line:#D9CDB8; --line-dk:#3A2C1D;
+  --f-display:'Prata',Georgia,'Times New Roman',serif;
+  --f-sans:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --maxw:1180px; --pad:clamp(18px,5vw,56px);
+  --e:cubic-bezier(.22,.61,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--f-sans);background:var(--bone);color:var(--ink);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.1;letter-spacing:-.01em}
+a{color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--brass-ink);display:inline-flex;align-items:center;gap:.7em}
+.eyebrow::before{content:"";width:26px;height:1px;background:var(--brass);display:inline-block}
+header{border-bottom:1px solid var(--line);background:var(--bone-2)}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-top:16px;padding-bottom:16px;flex-wrap:wrap}
+.brand-name{font-family:var(--f-display);font-size:22px;letter-spacing:.14em;text-transform:uppercase}
+.brand-sub{display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:2px}
+.hd-phone{font-family:var(--f-display);font-size:20px;white-space:nowrap}
+.hd-phone span{display:block;font-family:var(--f-sans);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--taupe);font-weight:600;margin-top:2px}
+.intro{padding:clamp(28px,4vw,52px) 0 6px}
+.intro h1{font-size:clamp(30px,4.4vw,46px);margin:16px 0 14px}
+.intro p{max-width:66ch;color:var(--taupe);font-size:15.5px}
+.tariffs{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.tariff{display:inline-flex;align-items:baseline;gap:6px;font-weight:600;font-size:13.5px;color:var(--brass-ink);background:rgba(185,138,84,.12);border:1px solid rgba(185,138,84,.4);border-radius:40px;padding:6px 15px}
+.tariff b{font-weight:700}
+.svccalc{margin:26px 0 40px;border:1px solid var(--line-dk);border-radius:6px;padding:clamp(22px,3.4vw,40px);background:linear-gradient(160deg,rgba(185,138,84,.07),transparent 60%)}
+.svccalc-head{margin-bottom:24px}
+.svccalc-head h2{color:var(--ink);font-size:clamp(22px,2.6vw,30px);margin:12px 0 8px}
+.svccalc-head p{font-size:14.5px;color:var(--taupe);max-width:60ch}
+.svccalc-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(22px,3.6vw,44px);align-items:start}
+.svccalc-form{display:grid;grid-template-columns:1fr 1fr;gap:16px;min-width:0}
+.svccalc-field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.svccalc-field.full{grid-column:1/-1}
+.svccalc-field label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9E9078}
+.svccalc-field select,.svccalc-field input{
+  width:100%;font-family:var(--f-sans);font-size:15px;color:var(--bone-2);background:var(--espresso-2);
+  border:1px solid var(--line-dk);border-radius:3px;padding:12px 13px;min-height:46px;
+  transition:border-color .25s var(--e),box-shadow .25s var(--e);
+}
+.svccalc-field select:focus,.svccalc-field input:focus{outline:none;border-color:var(--brass);box-shadow:0 0 0 3px rgba(176,132,68,.18)}
+.svccalc-field select option,.svccalc-field select optgroup{color:#fff;background:#2C2116}
+.svccalc-check{display:flex;align-items:center;gap:10px;flex-direction:row;padding-top:8px}
+.svccalc-check label{text-transform:none;font-size:14.5px;letter-spacing:0;color:#6a5c46;font-weight:500}
+.svccalc-check input{min-height:0;width:18px;height:18px;padding:0;accent-color:var(--brass)}
+.svccalc-sub{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brass-ink);margin-top:6px;padding-top:14px;border-top:1px dashed var(--line)}
+.svccalc-holes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.svccalc-holes .svccalc-field{min-width:0}
+.svccalc-extra{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.svccalc-extra .svccalc-field{min-width:0}
+.seg{display:flex;gap:0;border:1px solid var(--line-dk);border-radius:3px;overflow:hidden}
+.seg label{flex:1;text-transform:none;letter-spacing:0}
+.seg input{display:none}
+.seg span{display:block;text-align:center;padding:11px 8px;font-size:14px;color:#B7A98F;cursor:pointer;background:var(--espresso-2);transition:background .2s,color .2s}
+.seg input:checked + span{background:var(--brass);color:#241a0e;font-weight:600}
+@media(max-width:560px){.svccalc-extra{grid-template-columns:1fr}}
+.svccalc-result{background:var(--espresso-2);border:1px solid var(--line-dk);border-radius:6px;padding:clamp(20px,3vw,30px);position:sticky;top:18px;min-width:0}
+.svccalc-result .eyebrow{color:var(--brass-lt);margin-bottom:14px}
+.svccalc-price{font-family:var(--f-display);font-size:clamp(30px,3.4vw,42px);color:var(--bone-2);line-height:1.1}
+.svccalc-price .cur{font-size:.5em;color:var(--brass-lt)}
+.svccalc-positions{margin-top:16px;padding-top:16px;border-top:1px solid var(--line-dk);display:flex;flex-direction:column;gap:8px}
+.svccalc-positions-head{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9E9078;margin-bottom:2px}
+.svccalc-position-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px;color:#D8CBB4}
+.svccalc-position-row .pname{flex:1;min-width:0}
+.svccalc-position-row .pprice{font-weight:600;color:var(--bone-2);white-space:nowrap}
+.svccalc-position-remove{background:none;border:none;color:#9E9078;cursor:pointer;font-size:15px;line-height:1;padding:2px 4px;flex:none}
+.svccalc-position-remove:hover{color:#fff}
+.svccalc-breakdown-label{margin-top:16px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#9E9078}
+.svccalc-breakdown{margin-top:16px;padding-top:16px;border-top:1px solid var(--line-dk);font-size:13.5px;color:#B7A98F;display:flex;flex-direction:column;gap:6px}
+.svccalc-breakdown-label + .svccalc-breakdown{margin-top:8px;padding-top:0;border-top:none}
+.svccalc-breakdown .row{display:flex;justify-content:space-between;gap:12px}
+.svccalc-breakdown .row span:last-child{color:var(--bone-2);white-space:nowrap}
+.svccalc-note{margin-top:14px;font-size:12.5px;line-height:1.55;color:#9E9078}
+.svccalc-actions{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.svccalc-status{margin-top:12px;font-size:13px;color:var(--brass-lt);display:none}
+.svccalc-status.show{display:block}
+.svccalc-status.is-error{color:#E08A6B}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.6em;font-family:var(--f-sans);font-weight:600;font-size:15px;letter-spacing:.01em;padding:14px 24px;border-radius:3px;cursor:pointer;border:1px solid transparent;min-height:50px;width:100%;transition:transform .25s var(--e),background .25s var(--e),color .25s var(--e),border-color .25s var(--e);white-space:normal;text-align:center;line-height:1.3}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-brass{background:var(--brass);color:#241a0e}
+.btn-brass:hover{background:var(--brass-lt);transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--bone-2);border-color:var(--line-dk)}
+.btn-ghost:hover{background:rgba(255,255,255,.06);transform:translateY(-2px)}
+.btn:disabled{opacity:.6;cursor:not-allowed;pointer-events:none}
+.btn-sm{min-height:40px;padding:8px 14px;font-size:13px;width:auto;background:var(--espresso-2);color:var(--bone-2);border-color:var(--line-dk)}
+.btn-sm:hover{background:var(--espresso);transform:translateY(-1px)}
+.svccalc-hint{font-size:11.5px;color:#8a7c64;line-height:1.4}
+.svccalc-field input:required{border-left:3px solid var(--brass)}
+footer{background:var(--espresso);color:#C9BCA6;margin-top:20px}
+footer .wrap{padding-top:34px;padding-bottom:34px}
+.foot-grid{display:flex;flex-wrap:wrap;gap:34px;justify-content:space-between}
+footer .brand-name{color:var(--bone-2)}
+footer h4{font-family:var(--f-sans);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass-lt);margin-bottom:14px;font-weight:600}
+.foot-phone{font-family:var(--f-display);font-size:22px;color:var(--bone-2);display:block;margin-bottom:6px}
+footer a{color:#C9BCA6;text-decoration:none;display:block;padding:2px 0}
+footer a:hover{color:var(--brass-lt)}
+.foot-legal{margin-top:26px;padding-top:18px;border-top:1px solid var(--line-dk);font-size:12.5px;color:#9C8A6E;line-height:1.7}
+@media(max-width:900px){.svccalc-grid{grid-template-columns:1fr}.svccalc-result{position:static}}
+@media(max-width:600px){.svccalc-form{grid-template-columns:1fr}.svccalc-holes{grid-template-columns:1fr}}
+.print-doc{display:none}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;color:#000}
+  body>header,body>main,body>footer{display:none!important}
+  .print-doc{display:block!important;font-family:var(--f-sans);color:#000;font-size:10.5pt;line-height:1.45}
+  .pd-top{display:flex;justify-content:space-between;gap:24px;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:12px}
+  .pd-co{font-size:8.7pt;color:#222;line-height:1.55}
+  .pd-co .nm{font-size:13pt;font-family:var(--f-display);letter-spacing:.08em;text-transform:uppercase}
+  .pd-right{text-align:right}
+  .pd-title{font-family:var(--f-display);font-size:17pt;margin:0 0 2px}
+  .pd-meta{font-size:9pt;color:#444}
+  table.pd{width:100%;border-collapse:collapse;margin:10px 0 6px;font-size:9.3pt}
+  table.pd th,table.pd td{border:1px solid #8a8a8a;padding:5px 7px;text-align:left;vertical-align:top}
+  table.pd th{background:#ececec;font-weight:600;font-size:8.4pt;text-transform:uppercase;letter-spacing:.02em}
+  table.pd td.num,table.pd th.num{text-align:right;white-space:nowrap}
+  table.pd tr.pd-pos td{background:#f4efe6;font-weight:700}
+  table.pd tr.pd-total td{font-weight:700;font-size:11pt;border-top:2px solid #000;background:#f4efe6}
+  .pd-note{font-size:8.4pt;color:#333;margin-top:8px;line-height:1.45;border:1px solid #bbb;padding:7px 9px;background:#fafafa}
+  .pd-sign{margin-top:20px;display:flex;flex-direction:column;gap:15px}
+  .pd-sign-row{font-size:9.4pt}
+  .pd-sign-row .cap{margin-bottom:2px}
+  .pd-linewrap{display:flex;gap:26px;align-items:flex-end;margin-top:6px}
+  .pd-line{flex:1;border-bottom:1px solid #000;height:15px}
+  .pd-linelbl{font-size:7.6pt;color:#666}
+  .pd-exec{margin-top:18px;padding-top:10px;border-top:1px solid #ccc;font-size:9.4pt;display:flex;justify-content:space-between;gap:30px;align-items:flex-end}
+  .no-print{display:none!important}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap hd">
+    <div>
+      <span class="brand-name">СРЕДА</span>
+      <span class="brand-sub">Мебельное производство · Новороссийск</span>
+    </div>
+    <a href="tel:+79883193914" class="hd-phone">+7 (988) 319-39-14<span>Звонок · WhatsApp · Telegram</span></a>
+  </div>
+</header>
+<main>
+<section class="intro">
+  <div class="wrap">
+    <span class="eyebrow">Онлайн-просчёт · B2B</span>
+    <h1>Калькулятор работ и материала</h1>
+    <p>Раскрой, кромление, присадка и пазование по действующему прайсу цеха. База материалов: Egger, Lamarty, AGT, 5K, фанера меламиновая и каталог АМК-Троя (ЛДСП/ЛМДФ/МДФ/ЛХДФ). Материал можно привезти свой или купить у нас — по рознице или опту. Расчёт можно скопировать, распечатать или сохранить в PDF.</p>
+    <div class="tariffs">
+      <span class="tariff">Раскрой <b>от 300 ₽ / лист</b></span>
+      <span class="tariff">Поклейка кромки <b>от 50 ₽ / пог. м</b></span>
+      <span class="tariff">Присадка <b>от 15 ₽ / отв.</b></span>
+      <span class="tariff">Пазование <b>от 60 ₽ / пог. м</b></span>
+    </div>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <div class="svccalc">
+      <div class="svccalc-head">
+        <span class="eyebrow">Параметры заказа</span>
+        <h2>Рассчитайте стоимость работ и материала</h2>
+        <p>Выберите материал и операции. Каждую деталь можно добавить отдельной позицией — итог посчитается по всей заявке.</p>
+      </div>
+      <div class="svccalc-grid">
+        <form class="svccalc-form" id="svcCalcForm" autocomplete="off">
+
+          <div class="svccalc-field full">
+            <label for="svcDocName">Название документа <span style="color:#E08A6B">*</span> — обязательно</label>
+            <input type="text" id="svcDocName" placeholder="Например: Кухня Иванов, 22.07" required>
+          </div>
+          <div class="svccalc-field full">
+            <label for="svcDocSelect">Сохранённые расчёты (сохраняются автоматически)</label>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="svcDocSelect" style="flex:1;min-width:150px"></select>
+              <button type="button" id="svcDocNew" class="btn btn-sm">＋ Новый</button>
+              <button type="button" id="svcDocDelete" class="btn btn-sm">Удалить</button>
+            </div>
+            <div class="svccalc-hint" id="svcSaveStatus" style="margin-top:6px"></div>
+          </div>
+
+          <div class="svccalc-sub">Материал и раскрой</div>
+          <div class="svccalc-field full">
+            <label for="svcCategory">Материал</label>
+            <select id="svcCategory"></select>
+          </div>
+
+          <div class="svccalc-field full" id="svcDecorSearchWrap">
+            <label for="svcDecorSearch">Быстрый поиск декора (Egger / АМК-Троя)</label>
+            <input list="svcDecorList" id="svcDecorSearch" placeholder="Начните вводить: дуб, серый, U999, Макиато…">
+            <datalist id="svcDecorList"></datalist>
+          </div>
+
+          <div class="svccalc-field full" id="svcEggerWrap">
+            <label for="svcDecor">Декор Egger</label>
+            <select id="svcDecor"></select>
+          </div>
+
+          <div class="svccalc-field full" id="svcGroupWrap">
+            <label for="svcGroup" id="svcGroupLabel">Группа / декор</label>
+            <select id="svcGroup"></select>
+          </div>
+
+          <div class="svccalc-field" id="svcThicknessWrap">
+            <label for="svcThickness">Толщина</label>
+            <select id="svcThickness"></select>
+          </div>
+          <div class="svccalc-field">
+            <label for="svcSheets">Количество листов, шт</label>
+            <input type="number" id="svcSheets" min="0" step="1" placeholder="Например, 1">
+          </div>
+
+          <div class="svccalc-field full">
+            <label for="svcMaterialSource">Источник материала</label>
+            <select id="svcMaterialSource">
+              <option value="own">Свой материал (привозной)</option>
+              <option value="buy">Купить у нас</option>
+            </select>
+          </div>
+          <div class="svccalc-field full" id="svcPriceModeWrap">
+            <label>Цена материала при покупке у нас</label>
+            <div class="seg">
+              <label><input type="radio" name="svcPriceMode" value="rozn" checked><span>Розница</span></label>
+              <label><input type="radio" name="svcPriceMode" value="opt"><span>Опт (мебельщик)</span></label>
+            </div>
+          </div>
+
+          <div class="svccalc-sub">Кромка: материал и поклейка считаются отдельно</div>
+          <div class="svccalc-field full">
+            <label for="svcEdgeMatPreset">1) Кромка-материал — выбрать из прайса (Egger и поставщики)</label>
+            <select id="svcEdgeMatPreset"></select>
+            <div class="svccalc-hint">Выберите кромку Egger или поставщика — цена подставится. Либо впишите цену вручную ниже.</div>
+          </div>
+          <div class="svccalc-field">
+            <label for="svcEdgeMatPrice">Цена кромки-материала, ₽/пог. м</label>
+            <input type="number" id="svcEdgeMatPrice" min="0" step="1" value="0">
+          </div>
+          <div class="svccalc-field">
+            <label for="svcEdgeMatLen">Метраж кромки-материала (покупаем), пог. м</label>
+            <input type="number" id="svcEdgeMatLen" min="0" step="0.5" value="0">
+          </div>
+          <div class="svccalc-field">
+            <label for="svcEdgeGlueRate">2) Поклейка кромки (услуга), ₽/пог. м</label>
+            <input type="number" id="svcEdgeGlueRate" min="0" step="1" value="50">
+          </div>
+          <div class="svccalc-field">
+            <label for="svcEdgeGlueLen">Метраж поклейки (услуга), пог. м</label>
+            <input type="number" id="svcEdgeGlueLen" min="0" step="0.5" value="0">
+          </div>
+
+          <div class="svccalc-sub">Присадка (сверление отверстий)</div>
+          <div class="svccalc-field full svccalc-holes">
+            <div class="svccalc-field"><label for="svcHole10">Ø4–10 мм, шт</label><input type="number" id="svcHole10" min="0" step="1" value="0"></div>
+            <div class="svccalc-field"><label for="svcHole20">Ø10–20 мм, шт</label><input type="number" id="svcHole20" min="0" step="1" value="0"></div>
+            <div class="svccalc-field"><label for="svcHole35">Ø25–35 мм, шт</label><input type="number" id="svcHole35" min="0" step="1" value="0"></div>
+          </div>
+
+          <div class="svccalc-field full">
+            <div class="svccalc-check">
+              <input type="checkbox" id="svcExtraToggle">
+              <label for="svcExtraToggle">Показать доп. операции (пазование, фигурный рез, обрезки…)</label>
+            </div>
+          </div>
+          <div class="svccalc-field full svccalc-extra" id="svcExtraWrap" style="display:none">
+            <div class="svccalc-field"><label for="svcGroove4">Паз под ДВП 4 мм, пог. м</label><input type="number" id="svcGroove4" min="0" step="0.5" value="0"></div>
+            <div class="svccalc-field"><label for="svcGroove10">Паз 10 мм, пог. м</label><input type="number" id="svcGroove10" min="0" step="0.5" value="0"></div>
+            <div class="svccalc-field"><label for="svcGroove16">Паз 16 мм, пог. м</label><input type="number" id="svcGroove16" min="0" step="0.5" value="0"></div>
+            <div class="svccalc-field"><label for="svcCurve">Фигурный / криволинейный рез, пог. м</label><input type="number" id="svcCurve" min="0" step="0.5" value="0"></div>
+            <div class="svccalc-field"><label for="svcOffcutParts">Раскрой из обрезков заказчика, дет.</label><input type="number" id="svcOffcutParts" min="0" step="1" value="0"></div>
+            <div class="svccalc-field"><label for="svcAngleCuts">Рез под углом 45° / по пластику, срезов</label><input type="number" id="svcAngleCuts" min="0" step="1" value="0"></div>
+            <div class="svccalc-field"><label for="svcLeftoverCuts">Роспуск остатка для транспортировки, пропилов</label><input type="number" id="svcLeftoverCuts" min="0" step="1" value="0"></div>
+          </div>
+
+          <div class="svccalc-field full">
+            <button type="button" class="btn btn-brass" id="svcAddPosition">+ Добавить эту позицию в заявку</button>
+          </div>
+
+          <div class="svccalc-sub">Контакты для заявки (необязательно)</div>
+          <div class="svccalc-field"><label for="svcName">Имя / компания</label><input type="text" id="svcName" placeholder="Как к вам обращаться"></div>
+          <div class="svccalc-field"><label for="svcPhone">Телефон</label><input type="tel" id="svcPhone" placeholder="+7 (___) ___-__-__"></div>
+        </form>
+
+        <div class="svccalc-result">
+          <span class="eyebrow">Ориентировочная стоимость</span>
+          <div class="svccalc-price"><span id="svcPrice">—</span> <span class="cur">₽</span></div>
+          <div class="svccalc-positions" id="svcPositions" style="display:none">
+            <div class="svccalc-positions-head">Позиции в заявке</div>
+            <div id="svcPositionsListInner"></div>
+          </div>
+          <div class="svccalc-breakdown-label" id="svcCurrentLabel" style="display:none">Текущая позиция</div>
+          <div class="svccalc-breakdown">
+            <div class="row"><span>Материал</span><span id="svcBMaterial">—</span></div>
+            <div class="row"><span>Раскрой</span><span id="svcBCut">—</span></div>
+            <div class="row"><span>Кромка (материал)</span><span id="svcBEdgeMat">—</span></div>
+            <div class="row"><span>Поклейка кромки</span><span id="svcBEdge">—</span></div>
+            <div class="row"><span>Присадка</span><span id="svcBDrill">—</span></div>
+            <div class="row"><span>Доп. работы</span><span id="svcBExtra">—</span></div>
+          </div>
+          <div class="svccalc-note" id="svcMaterialNote"></div>
+          <div class="svccalc-note">Расчёт предварительный и не является публичной офертой. Точную стоимость подтверждаем после проверки карты раскроя и спецификации.</div>
+          <div class="svccalc-actions no-print">
+            <button type="button" id="svcPrint" class="btn btn-brass">🖨 Печать / сохранить в PDF</button>
+          </div>
+          <div class="svccalc-status" id="svcStatus"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div style="max-width:320px">
+        <span class="brand-name">СРЕДА</span>
+        <p style="margin-top:12px;font-size:14px;color:#9C8A6E">Цех распила на заводе «Прибой» в Новороссийске: раскрой ЛДСП, МДФ, фанеры (нестинг ЧПУ), кромление, присадка, фасады.</p>
+      </div>
+      <div>
+        <h4>Контакты</h4>
+        <a href="tel:+79883193914" class="foot-phone">+7 (988) 319-39-14</a>
+        <a href="tel:+79189864121">+7 (918) 986-41-21</a>
+        <a href="https://wa.me/79883193914" target="_blank" rel="noopener">WhatsApp →</a>
+        <a href="https://t.me/+79883193914" target="_blank" rel="noopener">Telegram →</a>
+        <a href="mailto:319.39.14@gmail.com">319.39.14@gmail.com</a>
+      </div>
+      <div>
+        <h4>Адрес и время</h4>
+        <p style="font-size:14px;color:#C9BCA6">г. Новороссийск,<br>ул. Дзержинского, 211 к1</p>
+        <p style="font-size:14px;color:#C9BCA6;margin-top:8px">Пн–Пт · 9:00–18:00</p>
+        <p style="font-size:13px;color:#9C8A6E;margin-top:8px">Новороссийск · Геленджик · Анапа</p>
+      </div>
+    </div>
+    <div class="foot-legal">ИП Малюга Александр Сергеевич · ОГРНИП 323237500486910 · ИНН 231536618490 · © <span id="yr"></span> СРЕДА</div>
+  </div>
+</footer>
+
+<!-- Печатная смета (видна только при печати / сохранении в PDF) -->
+<div id="svcPrintDoc" class="print-doc"></div>
+
+<script>var PL={"MAT":{"lamarty_p2":{"label":"ЛДСП Lamarty (Р2)","supplier":"СФЗ / Lamarty","thick":[10,16,22,25],"groups":{"lux_base":{"label":"Люкс · гладкие (W,L,R,A,K,O,T,P,V)","price":{"10":3310,"16":3845,"22":4869,"25":5377}},"lux_str":{"label":"Люкс · структура (D,N,G,US)","price":{"10":4170,"16":4345,"22":5439,"25":5968}},"lux_prem":{"label":"Люкс · глуб. структура (N*,D*,U)","price":{"10":4540,"16":4680,"22":5790,"25":6518}},"prem_base":{"label":"Премиум · гладкие (W,L,R,A,K,O,T,P,V)","price":{"10":3200,"16":3710,"22":4732,"25":5267}},"prem_str":{"label":"Премиум · структура (D,N,G,US)","price":{"10":3770,"16":4210,"22":4965,"25":5673}},"prem_prem":{"label":"Премиум · глуб. структура (N*,D*,U)","price":{"10":4155,"16":4570,"22":5336,"25":6044}},"cls_base":{"label":"Классика · гладкие (W,L,R,A,K,O,T,P,V)","price":{"10":2910,"16":3480,"22":4258,"25":4924}},"cls_str":{"label":"Классика · структура (D,N,G,US)","price":{"10":3250,"16":3715,"22":4491,"25":5329}},"cls_prem":{"label":"Классика · глуб. структура (N*,D*,U)","price":{"10":3650,"16":4100,"22":4869,"25":5728}}},"optFactor":null,"unit":"лист","fmt":"2750×1830"},"lamarty_p5":{"label":"ЛДСП Lamarty влагостойкая (Р5)","supplier":"СФЗ / Lamarty","thick":[16],"groups":{"lux_base":{"label":"Люкс · гладкие (W,L,R,A,K,O,T,P,V)","price":{"16":5645}},"lux_str":{"label":"Люкс · структура (D,N,G,US)","price":{"16":6205}},"lux_prem":{"label":"Люкс · глуб. структура (N*,D*,U)","price":{"16":6580}},"prem_base":{"label":"Премиум · гладкие (W,L,R,A,K,O,T,P,V)","price":{"16":5330}},"prem_str":{"label":"Премиум · структура (D,N,G,US)","price":{"16":5870}},"prem_prem":{"label":"Премиум · глуб. структура (N*,D*,U)","price":{"16":6260}},"cls_base":{"label":"Классика · гладкие (W,L,R,A,K,O,T,P,V)","price":{"16":3800}},"cls_str":{"label":"Классика · структура (D,N,G,US)","price":{"16":4000}},"cls_prem":{"label":"Классика · глуб. структура (N*,D*,U)","price":{"16":4300}}},"optFactor":null,"unit":"лист","fmt":""},"fanera_mel":{"label":"Фанера меламиновая","supplier":"СФЗ","thick":[6,9,12,15,16,18,21],"groups":{"belyj":{"label":"Белый","price":{"6":3808,"9":4256,"12":4631,"15":4973,"16":5325,"18":5468,"21":6003}},"teffi":{"label":"Тэффи","price":{"6":3545,"9":3989,"12":4369,"15":4704,"16":5070,"18":5198,"21":5748}},"vulkan":{"label":"Вулканический серый","price":{"6":3627,"9":4072,"12":4451,"15":4792,"16":5150,"18":5285,"21":5819}},"fjord":{"label":"Фьорд","price":{"6":5032,"9":5476,"12":5856,"15":6189,"16":6555,"18":6693,"21":7227}},"parma":{"label":"Парма","price":{"6":5001,"9":5441,"12":5814,"15":6154,"16":6515,"18":6649,"21":7197}},"albero":{"label":"Альберо","price":{"6":3563,"9":4011,"12":4386,"15":4725,"16":5080,"18":5223,"21":5758}},"dubvotan":{"label":"Дуб Вотан","price":{"6":3808,"9":4256,"12":4631,"15":4973,"16":5325,"18":5468,"21":6003}},"medeya":{"label":"Медея / Хронос / Эра","price":{"6":3980,"9":4422,"12":4800,"15":5141,"16":5495,"18":5635,"21":6177}}},"optFactor":null,"unit":"лист","fmt":"2530×1265"},"agt_panel":{"label":"Панель AGT (глянец/супермат)","supplier":"СФЗ / AGT","thick":[18],"groups":{"g2":{"label":"AGT 2 группа","price":{"18":8164}},"g3":{"label":"AGT 3 группа","price":{"18":9000}},"g4":{"label":"AGT 4 группа","price":{"18":9814}},"g5":{"label":"AGT 5 группа","price":{"18":12198}},"supramat":{"label":"AGT Supramat","price":{"18":12737}},"p3_8_pvh":{"label":"3P 8 гр · обратка ПВХ","price":{"18":11218}},"p3_8_dvu":{"label":"3P 8 гр · двусторонняя","price":{"18":14665}},"p3_9_pvh":{"label":"3P 9 гр · обратка ПВХ","price":{"18":12259}},"p3_9_dvu":{"label":"3P 9 гр · двусторонняя","price":{"18":19699}}},"optFactor":0.6,"unit":"лист","fmt":"2800×1220"},"panel_5k":{"label":"Панель 5К (глянец/матовый)","supplier":"СФЗ / 5K","thick":[18],"groups":{"belyj_gloss":{"label":"Белый 9002 глянец","price":{"18":12753}},"belyj_matt":{"label":"Белый 29002 матовый","price":{"18":13312}},"lamigloss":{"label":"Lamigloss глянец","price":{"18":13091}},"lamimatt":{"label":"Lamimatt матовый","price":{"18":13546}},"lamiart_gloss":{"label":"Lamiart глянец","price":{"18":14222}},"lamiart_matt":{"label":"Lamiart матовый","price":{"18":14794}},"lamifeel":{"label":"Lamifeel матовый","price":{"18":16575}}},"optFactor":0.6,"unit":"лист","fmt":"2800×1220"},"amk_standart":{"label":"ЛДСП STANDART","supplier":"АМК-Троя","thick":[10,16,22],"groups":{"g7":{"label":"Группа 7 (базовая)","price":{"10":4120,"16":3570,"22":4610}},"g8":{"label":"Группа 8 (структура)","price":{"10":4190,"16":3680,"22":4650}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_color":{"label":"ЛДСП COLOR","supplier":"АМК-Троя","thick":[10,16,22],"groups":{"g2":{"label":"Группа 2","price":{"10":4280,"16":3440,"22":4720}},"g3":{"label":"Группа 3","price":{"10":4260,"16":3710,"22":4640}},"g4":{"label":"Группа 4","price":{"10":4480,"16":3970,"22":4850}},"g6":{"label":"Группа 6","price":{"10":4700,"16":4120,"22":5180}},"gМ100":{"label":"EXTRAVERT влагостойкий","price":{"16":4680}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_contempo":{"label":"ЛДСП CONTEMPO","supplier":"АМК-Троя","thick":[10,16,22],"groups":{"g8":{"label":"Группа 8","price":{"10":4190,"16":3680,"22":4650}},"g9":{"label":"Группа 9","price":{"10":4520,"16":3970,"22":4630}},"g10":{"label":"Группа 10","price":{"10":4700,"16":4200}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_harmony":{"label":"ЛДСП HARMONY","supplier":"АМК-Троя","thick":[10,16],"groups":{"g12":{"label":"Группа 12","price":{"10":5060,"16":4640}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_econom":{"label":"ЛДСП АМК (эконом, 16мм)","supplier":"АМК-Троя","thick":[16],"groups":{"g1":{"label":"Группа 1","price":{"16":3100}},"g2":{"label":"Группа 2","price":{"16":3300}},"g3":{"label":"Группа 3","price":{"16":3550}},"g4":{"label":"Группа 4","price":{"16":3320}},"g5":{"label":"Группа 5","price":{"16":3470}},"g6":{"label":"Группа 6","price":{"16":3480}},"g7":{"label":"Группа 7","price":{"16":3770}}},"optFactor":null,"unit":"лист","fmt":"2800×2070 / 2750×1830"},"amk_favorite":{"label":"ЛМДФ FAVORITE (глянец/мат)","supplier":"АМК-Троя","thick":[18],"groups":{"all":{"label":"Ultra Gloss / Ultra Matt","price":{"18":9700}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_moonlight":{"label":"ЛМДФ MOONLIGHT","supplier":"АМК-Троя","thick":[16],"groups":{"g2":{"label":"Группа 2","price":{"16":4830}},"g4":{"label":"Группа 4","price":{"16":4830}},"g6":{"label":"Группа 6","price":{"16":4830}},"g51":{"label":"Группа 51","price":{"16":5010}},"g52":{"label":"Группа 52","price":{"16":4920}},"g53":{"label":"Группа 53","price":{"16":5010}},"g55":{"label":"Группа 55","price":{"16":5380}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_silkway":{"label":"ЛДСП SILKWAY","supplier":"АМК-Троя","thick":[16],"groups":{"g51":{"label":"Группа 51","price":{"16":3830}},"g55":{"label":"Группа 55","price":{"16":4030}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_mdf":{"label":"МДФ шлифованный","supplier":"АМК-Троя","thick":[6,8,10,12,16,18,19,22,25],"groups":{"all":{"label":"Шлифованный (под покраску/фрезеровку)","price":{"6":1840,"8":2240,"10":2640,"12":3010,"16":3690,"18":4110,"19":4320,"22":5060,"25":5850}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_lmdf_bel":{"label":"ЛМДФ Белый (глухой)","supplier":"АМК-Троя","thick":[16,19,22],"groups":{"1s":{"label":"Односторонний","price":{"16":4380,"19":4760,"22":5020}},"2s":{"label":"Двусторонний","price":{"16":4760,"19":5140,"22":5400}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"},"amk_lhdf":{"label":"ЛХДФ / ХДФ","supplier":"АМК-Троя","thick":[3,4],"groups":{"lhdf3":{"label":"ЛХДФ в декоре 3мм","price":{"3":1200}},"hdf_raw":{"label":"ХДФ нешлифованный","price":{"3":1040,"4":1390}}},"optFactor":null,"unit":"лист","fmt":"2800×2070"}},"AMK_DECOR":[["Белый Снег","FAVORITE","2"],["Белый Бриллиант","FAVORITE","3"],["Макиато","FAVORITE","3"],["Сатин","FAVORITE","3"],["Серый Камень","FAVORITE","3"],["Серый Шифер","FAVORITE","3"],["Слоновая Кость","FAVORITE","3"],["Антрацит","FAVORITE","4"],["Кашемир","FAVORITE","4"],["Черный","FAVORITE","4"],["Глиняный Серый","FAVORITE","6"],["Латте","FAVORITE","6"],["Азул Оникс","MOONLIGHT","55"],["Белый Бриллиант","MOONLIGHT","2"],["Белый Платиновый","MOONLIGHT","2"],["Дуб Комано","MOONLIGHT","53"],["Дуб Натуральный Крафт","MOONLIGHT","52"],["Дуб Парящий","MOONLIGHT","52"],["Дуб Сантана","MOONLIGHT","53"],["Дуб Сторсунд","MOONLIGHT","53"],["Кашемир","MOONLIGHT","4"],["Кипарисовый Зеленый","MOONLIGHT","51"],["Марсала","MOONLIGHT","51"],["Мрамор Пьетра Графитовый","MOONLIGHT","55"],["Мрамор Пьетра Дымчатый","MOONLIGHT","55"],["Сатин","MOONLIGHT","6"],["Зеленый","MOONLIGHT","51"],["Серый Графит","MOONLIGHT","4"],["Тегола","MOONLIGHT","53"],["Черный","MOONLIGHT","4"],["Дымчатый Розовый","SILKWAY","51"],["Марсала","SILKWAY","51"],["Сантонини Светлый","SILKWAY","55"],["Сантонини Темный","SILKWAY","55"],["Береза","STANDART","7"],["Бук Бавария","STANDART","7"],["Венге","STANDART","7"],["Венге Цаво","STANDART","7"],["Вишня Оксфорд","STANDART","7"],["Дуб Венге","STANDART","7"],["Дуб Молочный","STANDART","7"],["Дуб Винтаж Оксид","STANDART","7"],["Дуб Сонома","STANDART","7"],["Дуб Шамони Светлый","STANDART","7"],["Дуб Феррара","STANDART","7"],["Клен","STANDART","7"],["Ольха Горская","STANDART","7"],["Орех","STANDART","7"],["Орех Гварнери","STANDART","7"],["Орех Мария Луиза","STANDART","7"],["Орех Экко","STANDART","7"],["Яблоня Локарно","STANDART","7"],["Ясень Шимо Светлый","STANDART","7"],["Ясень Шимо Темный","STANDART","7"],["Венге Луизиана","STANDART","7"],["Орех Лион Светлый","STANDART","7"],["Орех Тьеполо","STANDART","7"],["Бук Артезан Перламутровый","STANDART","8"],["Бук Артизан Песочный","STANDART","8"],["Венге Подлинный","STANDART","8"],["Вишня Риверсайд Темная","STANDART","8"],["Вяз Благородный Натуральный","STANDART","8"],["Вяз Благородный Темный","STANDART","8"],["Вяз Либерти Светлый","STANDART","8"],["Вяз Либерти Дымчатый","STANDART","8"],["Вяз Либерти Серебряный","STANDART","8"],["Дуб Белый Крафт","STANDART","8"],["Дуб Серый Крафт","STANDART","8"],["Дуб Золотой Крафт","STANDART","8"],["Дуб Табачный Крафт","STANDART","8"],["Дуб Устричный (Ойстер)","STANDART","8"],["Дуб Янтарный","STANDART","8"],["Дуб Кофейный","STANDART","8"],["Дуб Нагано","STANDART","8"],["Дуб Экспресив Песочный","STANDART","8"],["Дуб Экспресив Бронзовый","STANDART","8"],["Коко Бола","STANDART","8"],["Морское Дерево Винтаж","STANDART","8"],["Морское Дерево Карбон","STANDART","8"],["Орех Селект Каминный","STANDART","8"],["Орех Селект Светлый","STANDART","8"],["Орех Селект Темный","STANDART","8"],["Ясень Таормина","STANDART","8"],["Зебрано Нюанс","STANDART","8"],["Зебрано Сахара","STANDART","8"],["Крослайн Латте","STANDART","8"],["Крослайн Карамель","STANDART","8"],["Белый Фасадный","COLOR","2"],["S02","COLOR","М100"],["Белый Снег","COLOR","6"],["Белый Снег","COLOR","2"],["Базальтовый","COLOR","3"],["Бежевый","COLOR","3"],["Мидия","COLOR","3"],["Песочный","COLOR","3"],["Серый Камень","COLOR","3"],["Слоновая Кость","COLOR","3"],["Макиато","COLOR","3"],["Ваниль","COLOR","3"],["Кремовый","COLOR","3"],["Серый Манхеттен","COLOR","3"],["Миндаль","COLOR","3"],["Стальной серый","COLOR","3"],["Серый Шифер","COLOR","3"],["Антрацит","COLOR","4"],["Белый Бриллиант","COLOR","4"],["Кашемир","COLOR","4"],["Серый Графит","COLOR","4"],["Черный","COLOR","4"],["Белый Жемчуг","COLOR","4"],["Холодный Серый","COLOR","6"],["Сатин","COLOR","6"],["Шиншилла Серая","COLOR","6"],["Белый Бриллиант","COLOR","6"],["Мышиный Серый","COLOR","6"],["Дымчатый Зеленый","COLOR","6"],["Капри Синий","COLOR","6"],["Алюминий","COLOR","6"],["Платиновый диск","COLOR","6"],["Платина","COLOR","6"],["Солнечный Свет","COLOR","6"],["Бензин","COLOR","6"],["Глиняный Серый","COLOR","6"],["Зеленый Лайм","COLOR","6"],["Зеленая Мамба","COLOR","6"],["Альби Полуночно-синий","COLOR","6"],["Капучино","COLOR","6"],["Керамический Красный","COLOR","6"],["Пастельный Зеленый","COLOR","6"],["Лаванда","COLOR","6"],["Латте","COLOR","6"],["Пудровый","COLOR","6"],["Зефир","COLOR","6"],["Безмолвная пустыня","COLOR","6"],["Пряный Красный","COLOR","6"],["Тоффи","COLOR","6"],["Лазурный голубой","COLOR","6"],["Прибрежный синий","COLOR","6"],["Алюминиевый Блеск","COLOR","6"],["Темный Шоколад","COLOR","6"],["Ателье Темное","CONTEMPO","9"],["Ателье Светлое","CONTEMPO","9"],["Блэквуд Ячменный","CONTEMPO","9"],["Блэквуд Сатиновый","CONTEMPO","9"],["Венге Винтаж","CONTEMPO","8"],["Дуб Клабхаус Серый","CONTEMPO","8"],["Дуб Приморский Белый","CONTEMPO","8"],["Дуб Приморский Сатиновый","CONTEMPO","8"],["Скандинавское Дерево Белое","CONTEMPO","8"],["Скандинавское Дерево серое","CONTEMPO","8"],["Орегон","CONTEMPO","8"],["Дуб Бурбон","CONTEMPO","8"],["Сосна Белая Лофт","CONTEMPO","8"],["Файнлайн Мокка","CONTEMPO","8"],["Ясень Прибрежный Натуральный","CONTEMPO","9"],["Ясень Прибрежный Светлый","CONTEMPO","9"],["Ясень Прибрежный Железный","CONTEMPO","9"],["Дуб Барокко Золотой","CONTEMPO","9"],["Дуб Барокко Янтарный","CONTEMPO","9"],["Дуб Барокко Ристретто","CONTEMPO","9"],["Дуб Кастелло Серый","CONTEMPO","9"],["Дуб Кастелло (Бренди) Коньячный","CONTEMPO","9"],["Дуб Кастелло Медовый","CONTEMPO","9"],["Дуб Харбор Винтажный","CONTEMPO","9"],["Дуб Харбор Золотой","CONTEMPO","9"],["К362 PW","CONTEMPO","9"],["Северное Дерево Светлое","CONTEMPO","9"],["Северное Дерево Темное","CONTEMPO","9"],["Сосна Кремовая Лофт","CONTEMPO","9"],["Файнлайн Крем","CONTEMPO","9"],["Тессеа Серовато-бежевый","CONTEMPO","9"],["Тессеа Мокка","CONTEMPO","9"],["Дуб Барбера Песчаный","CONTEMPO","9"],["Дуб Сильверджек Ореховый","CONTEMPO","9"],["Дуб Сильведжек Винтажный","CONTEMPO","9"],["Ясень Кала Дымчатый","CONTEMPO","9"],["Орех Франклин Табачный","CONTEMPO","9"],["Орех Франклин Карамельный","CONTEMPO","9"],["Артвуд Светлый","CONTEMPO","9"],["Артвуд Темный","CONTEMPO","9"],["Гикори Рокфорд Светлый","CONTEMPO","9"],["Гикори Рокфорд Натуральный","CONTEMPO","9"],["Гикори Рокфорд Темный","CONTEMPO","9"],["Дуб Эндгрейн Необработанный","CONTEMPO","9"],["Дуб Эндгрейн Элегантный","CONTEMPO","9"],["Дуб Гранж Колониальный","CONTEMPO","9"],["Дуб Гранж Платиновый","CONTEMPO","9"],["Дуб Гранж Песочный","CONTEMPO","9"],["Бетонный камень","CONTEMPO","10"],["Железный камень","CONTEMPO","10"],["Ржавый Камень","CONTEMPO","10"],["Угольный камень","CONTEMPO","10"],["Шелковый камень","CONTEMPO","10"],["К364 PW","CONTEMPO","10"],["Вяз Аврора Натуральный","CONTEMPO","10"],["Дуб Эвок Прибрежный","CONTEMPO","10"],["Дуб Эвок Окаменелый","CONTEMPO","10"],["Ароза Ласточкин хвост","CONTEMPO","10"],["Ароза Реликтовая","CONTEMPO","10"],["Серый Альбус","CONTEMPO","10"],["Дуб Гудзон Бискотто","HARMONY","12"],["Дуб Гудзон Кашемир","HARMONY","12"],["Дуб Гудзон Золотой","HARMONY","12"],["Дуб Гудзон Амаретто","HARMONY","12"],["Каштан Арвадонна Каменный","HARMONY","12"],["Каштан Арвадонна Пламенный","HARMONY","12"],["Каштан Арвадонна Норка","HARMONY","12"],["Каштан Арвадонна Угольный","HARMONY","12"],["Дуб Гудзон Шоколадный","HARMONY","12"]],"KROMKA":{"lamarty":{"label":"Кромка Lamarty/REHAU","note":"₽/пог.м, тип: Белый/Фон/Древес","vals":{"19x0.4":{"Белый":15,"Фоновые":15,"Древесные":15},"19x0.8":{"Белый":20,"Фоновые":25,"Древесные":30},"19x2":{"Белый":40,"Фоновые":45,"Древесные":55}}},"agt":{"label":"Кромка AGT 22×1","vals":{"1 группа":81,"2 группа":95,"Коллекция 3P":159}},"5k":{"label":"Кромка 5K 22×1","vals":{"Lamimatt/Lamigloss/однотон":60,"Lamiart":65}}}};</script>
+<script>
+(function(){
+  "use strict";
+  /* Доступ только через защищённую паролем страницу index.html.
+     Этот калькулятор используется только во вкладке; открыт напрямую — уводим на вход. */
+  if(window.top===window.self){ window.location.replace('index.html'); return; }
+  /* ================= ТАРИФЫ РАБОТ (редактируются под свой прайс) ================= */
+  var PRICE = {
+    cut: { ldsp:{t8:450,t16:750,t22:800}, mdf:{t8:600,t16:750,t22:850}, fanera:{t6:500,t12:650,t18:800,t24:1000}, hdf:300 },
+    // кромка: материал и поклейка задаются прямо в форме (₽/пог.м). Поклейка по умолчанию 50 ₽/пог.м.
+    hole: { d10:15, d20:20, d35:50 },
+    extra: { groove4:60, groove10:108, groove16:120, curve:120, offcutPart:170, angleCut:170, leftoverCut:220 },
+    markupPct: 5, delivery: 200 // цена материала в калькуляторе = (цена прайса × 1.05) + 200 ₽/лист (кроме Egger — та же формула — и кромки)
+  };
+  var OPT_PCT = 0; // общая оптовая скидка (%) для материалов без явной опт-цены (AGT/5K имеют свою опт-цену 0.6×)
+
+  /* ---- Каталог декоров Egger: [код,название,ЛМДФ,8,16,18,25] ₽/лист ---- */
+  var EGGER = [["W960","Белый классический (НОВИНКА)",0,3920,3920,4980,6730],["W960","Белый классический влагостойкий",0,null,4740,null,null],["W980","Белый платиновый",0,3990,3990,null,6370],["W980","Белый платиновый влагостойкий",0,null,4950,null,null],["W1000","Белый Премиум",1,7500,5900,5750,9780],["W1100","Альпина белая",0,5210,5210,5750,7640],["W1200","Фарфор Белый (НОВИНКА)",0,5040,5210,null,7270],["U104","Алебастр белый",0,5050,4950,null,6250],["U113","Коттон бежевый",0,5050,4950,null,7610],["U115","Карат бежевый (НОВИНКА)",0,5210,5210,5900,7600],["U125","Жёлтый песок (НОВИНКА)",0,null,6350,null,null],["U156","Бежевый песок",0,5050,4950,5720,7450],["U163","Карри жёлтый",0,null,6350,null,null],["U201","Серая галька",0,5410,5210,5900,7600],["U211","Миндаль бежевый (НОВИНКА)",0,5610,5650,null,null],["U216","Камель бежевый",0,4850,4950,5720,7600],["U222","Крем бежевый",0,5410,5210,null,7860],["U311","Бургундский красный",0,null,5650,null,null],["U321","Красный китайский",0,null,6000,null,null],["U325","Розовый антик",0,null,5650,null,null],["U335","Красно-коричневый (НОВИНКА)",0,null,5650,null,null],["U350","Сиена оранж (НОВИНКА)",0,null,6350,null,null],["U502","Синий дымчатый (НОВИНКА)",0,null,5350,null,null],["U504","Альпийское озеро",0,null,5650,null,null],["U525","Делфт голубой",0,null,5650,null,null],["U540","Деним голубой",0,null,5650,null,null],["U604","Зелёный эвкалипт (НОВИНКА)",0,null,6100,null,null],["U630","Зелёный лимон (Лайм)",0,null,5650,null,null],["U636","Фьорд зелёный (НОВИНКА)",0,null,6350,null,null],["U638","Зелёный шалфей (НОВИНКА)",0,null,6100,null,null],["U665","Зелёный камень (НОВИНКА)",0,null,6100,null,null],["U699","Зелёный еловый (НОВИНКА)",0,null,6100,null,null],["U702","Кашемир серый",0,5050,4950,5720,7730],["U705","Ангора серая",0,5310,5210,5900,null],["U707","Шёлк серый",0,5310,5210,null,7780],["U708","Светло-серый",0,5050,4950,5720,7400],["U727","Серый камень",0,5310,5210,null,7660],["U732","Серый асфальт",0,5050,4950,5720,7000],["U740","Серо-коричневый тёмный",0,null,5210,null,null],["U741","Лава серая",0,null,5210,null,null],["U748","Трюфель коричневый",0,5410,5210,null,null],["U750","Ярко-серый",0,5410,5210,5900,7620],["U763","Серый перламутровый",0,4970,4950,null,7660],["U767","Кубанит серый",0,null,5210,null,null],["U775","Серый дымчатый",0,5050,4950,5720,7800],["U780","Серый монументальный",0,null,5210,null,null],["U788","Арктика серый",0,5410,5210,null,8030],["U818","Тёмно-коричневый",0,null,5900,null,null],["U830","Карамель нюд",0,null,5660,null,null],["U899","Нежный чёрный (космос серый)",0,5260,5210,5900,8000],["U960","Оникс серый",0,5410,5210,null,7840],["U961","Чёрный графит",0,5050,4950,null,7720],["U963","Диамант серый",0,5050,4950,5720,7000],["U968","Серый уголь",0,null,5210,null,7640],["U998","Лес чёрный",1,null,7150,null,null],["U999","Чёрный",0,5050,4950,5720,6800],["H1113","Дуб Канзас коричневый",0,5310,5210,null,7650],["H1142","Дуб Сакраменто коричневый (НОВИНКА)",1,7450,7390,null,9880],["H1145","Дуб Бардолино натуральный",0,4950,4950,5790,7860],["H1176","Дуб Галифакс белый",1,7680,7580,null,9690],["H1180","Дуб Галифакс натуральный",1,7680,7580,9300,9690],["H1181","Дуб Галифакс табак",1,7680,7580,9300,9690],["H1199","Дуб термо чёрно-коричневый",0,null,5210,null,8450],["H1223","Ясень Севилья (НОВИНКА)",0,6240,6250,null,9180],["H1225","Ясень Тронхейм (НОВИНКА)",0,5300,5200,null,null],["H1242","Акация Шеффилд натур. (НОВИНКА)",0,null,6100,null,9210],["H1250","Ясень Наварра",1,7490,7390,null,9850],["H1277","Акация Лэйклэнд светлая",0,5050,4950,5790,7000],["H1303","Дуб Бельмонт коричневый (НОВИНКА)",0,null,5650,null,null],["H1307","Орех Вармия коричневый (НОВИНКА)",0,null,6250,null,null],["H1312","Дуб Уайт-Ривер песочно-бежевый",0,null,5900,null,null],["H1313","Дуб Уайт-Ривер серо-коричневый",0,null,5900,null,null],["H1318","Дикий дуб натуральный",0,5260,5210,null,7970],["H1330","Дуб Санта-Фе винтаж",0,6000,5900,null,8860],["H1344","Дуб Шерман коньяк коричневый",1,7680,7580,null,9850],["H1346","Дуб Шерман антрацит",1,7680,7580,null,9850],["H1362","Дуб Барония светлый (НОВИНКА)",0,5610,5650,null,null],["H1367","Дуб Каселла натур. светлый (НОВИНКА)",1,7870,7770,9300,9850],["H1385","Дуб Каселла натуральный (НОВИНКА)",1,7870,7770,9300,9850],["H1386","Дуб Каселла коричневый (НОВИНКА)",1,7870,7770,9300,9850],["H1399","Дуб Денвер трюфель",0,6040,5900,null,8860],["H1401","Сосна Касцина",0,5310,5210,null,7970],["H1487","Пихта Брамберг",0,null,5210,null,null],["H1636","Вишня Локарно",0,5110,5210,null,7890],["H1710","Каштан Кентукки песочный",0,6200,6100,null,9180],["H1714","Орех Линкольн",0,6280,6250,null,8730],["H1715","Орех Парона (НОВИНКА)",0,null,5210,null,null],["H1732","Берёза Песочная (НОВИНКА)",0,null,4950,null,null],["H1910","Бук луговой (НОВИНКА)",0,null,4950,null,null],["H2033","Дуб хантон тёмный",0,null,6350,null,null],["H3012","Кокоболо натуральный",0,5180,5210,null,8250],["H3003","Дуб Норидж (НОВИНКА)",0,null,6250,null,9210],["H3043","Эвкалипт тёмно-коричневый (НОВИНКА)",0,5750,5650,null,8520],["H305","Дуб Тонсберг натуральный (НОВИНКА)",0,6200,6100,null,9090],["H309","Дуб Тонсберг коричневый (НОВИНКА)",0,6200,6100,null,9090],["H3131","Дуб Давос натуральный",0,5310,5210,null,8380],["H3133","Дуб Давос трюфель",0,5310,5210,null,8210],["H3146","Дуб Лоренцо бежево-серый",0,6370,6270,null,8790],["H3152","Дуб Винченца белёный (НОВИНКА)",0,6450,6350,null,9400],["H3154","Дуб Чарльстон тёмно-коричневый",1,7490,7390,null,9850],["H3156","Дуб Корбридж серый",0,5310,5210,null,8340],["H3157","Дуб Винченца",0,5260,5210,6310,8340],["H3170","Дуб Кендал натуральный",0,5750,5650,null,8380],["H3176","Дуб Галифакс олово",0,7680,7580,null,9690],["H3190","Металлик Файнлайн антрацит",0,null,6250,null,9230],["H3195","Файнлайн белый (НОВИНКА)",0,null,6250,6310,9230],["H3197","Файнлайн средне-серый (НОВИНКА)",0,6450,6350,null,null],["H3198","Файнлайн тёмно-серый (НОВИНКА)",0,null,6350,null,null],["H3303","Дуб Гамильтон натуральный",0,5650,5650,null,7970],["H3309","Дуб Гладстоун песочный",1,7680,7580,null,9850],["H3317","Дуб Кунео коричневый (НОВИНКА)",1,7680,7580,null,9850],["H3325","Дуб Гладстоун табак",1,7680,7580,null,9850],["H3331","Дуб Небраска натуральный",0,5770,5650,null,8230],["H3359","Дуб Давенпорт натур. светлый (НОВИНКА)",1,null,7580,null,9850],["H3395","Дуб Корбридж натуральный",0,5050,4950,5790,7780],["H3398","Дуб Кендал коньяк",0,5310,5210,null,7780],["H3430","Сосна Аланд белая",0,5310,5210,null,8410],["H3433","Сосна Аланд полярная",0,5310,5210,null,8410],["H3450","Флитвуд белый",0,5310,5210,null,null],["H3700","Орех Пацифик натуральный",0,5750,5650,null,8670],["H3702","Орех Пацифик табак",0,5750,5650,null,8670],["H3710","Орех Карини натуральный",0,5750,5650,6720,8310],["H3730","Гикори натуральный",0,5750,5650,6720,8310],["H3734","Орех Дижон натуральный",0,5050,4950,5790,6730],["H3840","Клён Мандал натуральный",0,null,5140,null,null],["H3860","Клён сахарный шампань",0,null,5210,null,null],["F186","Бетон Чикаго светло-серый",0,6000,5900,null,7570],["F187","Бетон Чикаго тёмно-серый",0,6000,5900,null,7570],["F206","Камень Пьетра Гриджиа чёрный",0,null,6100,null,null],["F235","Сланец Скиваро (НОВИНКА)",0,null,6100,null,null],["F243","Мрамор Кандела светло-серый (НОВИНКА)",0,null,6100,null,null],["F323","Кобра бронза (НОВИНКА)",0,null,6500,null,null],["F416","Текстиль Бежевый",0,null,6100,null,null],["F433","Лён антрацит",0,null,6100,null,null],["F528","Металл брашированный бронзовый (НОВИНКА)",0,null,6500,null,null],["F685","Акапулько",0,null,6100,null,null],["F765","Серебристый",0,null,5260,null,null],["F800","Мрамор Кристалл (НОВИНКА)",0,null,6100,null,null]];
+  var THICK_COL = {8:3,16:4,18:5,25:6};
+
+  var MAT = PL.MAT, AMK_DECOR = PL.AMK_DECOR;
+  // соответствие коллекции АМК → ключ материала + функция ключа группы
+  var AMK_COLL = {FAVORITE:"amk_favorite",MOONLIGHT:"amk_moonlight",SILKWAY:"amk_silkway",
+                  STANDART:"amk_standart",COLOR:"amk_color",CONTEMPO:"amk_contempo",HARMONY:"amk_harmony"};
+
+  var $=function(id){return document.getElementById(id);};
+  var form=$("svcCalcForm"); if(!form) return;
+  var elCat=$("svcCategory"), elDecorSearch=$("svcDecorSearch"), elDecorList=$("svcDecorList"),
+      elEggerWrap=$("svcEggerWrap"), elDecor=$("svcDecor"),
+      elGroupWrap=$("svcGroupWrap"), elGroup=$("svcGroup"), elGroupLabel=$("svcGroupLabel"),
+      elThickness=$("svcThickness"), elSheets=$("svcSheets"),
+      elSource=$("svcMaterialSource"), elPriceModeWrap=$("svcPriceModeWrap"),
+      elEdgeMatPreset=$("svcEdgeMatPreset"), elEdgeMatPrice=$("svcEdgeMatPrice"), elEdgeMatLen=$("svcEdgeMatLen"),
+      elEdgeGlueRate=$("svcEdgeGlueRate"), elEdgeGlueLen=$("svcEdgeGlueLen"),
+      elH10=$("svcHole10"), elH20=$("svcHole20"), elH35=$("svcHole35"),
+      elExtraToggle=$("svcExtraToggle"), elExtraWrap=$("svcExtraWrap"),
+      elGroove4=$("svcGroove4"), elGroove10=$("svcGroove10"), elGroove16=$("svcGroove16"),
+      elCurve=$("svcCurve"),
+      elOffcutParts=$("svcOffcutParts"), elAngleCuts=$("svcAngleCuts"), elLeftoverCuts=$("svcLeftoverCuts"),
+      elName=$("svcName"), elPhone=$("svcPhone"),
+      priceEl=$("svcPrice"), bMaterial=$("svcBMaterial"), bCut=$("svcBCut"), bEdge=$("svcBEdge"), bEdgeMat=$("svcBEdgeMat"),
+      bDrill=$("svcBDrill"), bExtra=$("svcBExtra"), materialNoteEl=$("svcMaterialNote"),
+      statusEl=$("svcStatus"), positionsWrap=$("svcPositions"), positionsListInner=$("svcPositionsListInner"),
+      currentLabelEl=$("svcCurrentLabel"),
+      elDocName=$("svcDocName"), elDocSelect=$("svcDocSelect"), elSaveStatus=$("svcSaveStatus");
+
+  var positions=[];
+  var pickedDecor=null; // {cat, g, name} — декор, выбранный через быстрый поиск
+  function money(n){ return Math.round(n).toLocaleString("ru-RU"); }
+  function num(el){ return Math.max(parseFloat(el.value)||0,0); }
+  function intv(el){ return Math.max(parseInt(el.value,10)||0,0); }
+  function priceMode(){ var r=document.querySelector('input[name=svcPriceMode]:checked'); return r?r.value:"rozn"; }
+  // Формула цены материала: (цена прайса × 1.05) + 200. Применяется к Egger и ко всем материалам MAT.
+  function markup(raw){ return raw==null?null:Math.round(raw*(1+PRICE.markupPct/100))+PRICE.delivery; }
+  function eggerSheet(raw){ return markup(raw); }
+
+  function cutKindOf(catKey, lmdf){
+    if(catKey==="egger") return lmdf?"mdf":"ldsp";
+    if(catKey==="fanera_mel") return "fanera";
+    if(catKey==="amk_lhdf") return "hdf";
+    var l=MAT[catKey]?MAT[catKey].label:"";
+    return /МДФ|ЛМДФ|AGT|5К|Панель|панель/.test(l) ? "mdf" : "ldsp";
+  }
+  function cutPricePerSheet(kind,t){
+    if(kind==="hdf") return PRICE.cut.hdf;
+    if(kind==="fanera"){ var f=PRICE.cut.fanera; return t<=6?f.t6:t<=12?f.t12:t<=18?f.t18:f.t24; }
+    var m=kind==="mdf"?PRICE.cut.mdf:PRICE.cut.ldsp;
+    return t<=10?m.t8:t<=19?m.t16:m.t22;
+  }
+
+  /* ---------- Наполнение выпадающих списков ---------- */
+  function fillCategories(){
+    var html='<option value="egger">ЛДСП / ЛМДФ Egger (каталог декоров)</option>';
+    var bySup={};
+    Object.keys(MAT).forEach(function(k){ var s=MAT[k].supplier||"Прочее"; (bySup[s]=bySup[s]||[]).push(k); });
+    Object.keys(bySup).forEach(function(s){
+      html+='<optgroup label="'+s+'">';
+      bySup[s].forEach(function(k){ html+='<option value="'+k+'">'+MAT[k].label+'</option>'; });
+      html+='</optgroup>';
+    });
+    elCat.innerHTML=html;
+  }
+  // Кромка Egger (₽/пог.м) — из прайса, лист «кромка». Ключ = ширина×толщина.
+  var EGGER_KROMKA={
+    "Egger однотонные":{"0.4×19":15,"0.8×19":31,"0.8×23":38,"2×19":56,"0.4×28":30,"0.8×28":59,"2×28":85,"2×35":146,"1.5×43":165},
+    "Egger древесные/фантазийные":{"0.4×19":25,"0.8×19":42,"0.8×23":51,"2×19":75,"0.4×28":42,"0.8×28":81,"2×28":115,"2×35":155,"1.5×43":187},
+    "Egger ЛМДФ (мат/глянец)":{"1×23":120}
+  };
+  // Пресеты цены кромки-материала. Выбор пресета подставляет цену в поле (её можно поменять вручную).
+  function fillEdgeMatPresets(){
+    var K=PL.KROMKA, html='<option value="" data-l="">— указать цену вручную —</option>';
+    // Egger — первыми
+    Object.keys(EGGER_KROMKA).forEach(function(grp){
+      html+='<optgroup label="'+grp+'">';
+      var d=EGGER_KROMKA[grp];
+      Object.keys(d).forEach(function(sz){ html+='<option value="'+d[sz]+'" data-l="'+grp+" "+sz+'">'+grp.replace("Egger ","")+" · "+sz+" мм — "+d[sz]+" ₽/м</option>"; });
+      html+="</optgroup>";
+    });
+    var lam=K.lamarty;
+    html+='<optgroup label="'+lam.label+'">';
+    Object.keys(lam.vals).forEach(function(w){
+      var cats=lam.vals[w], vals=Object.keys(cats).map(function(c){return cats[c];});
+      var same=vals.every(function(v){return v===vals[0];}), wl="Lamarty "+w.replace("x","×")+" мм";
+      if(same){ html+='<option value="'+vals[0]+'" data-l="'+wl+'">'+wl+" — "+vals[0]+" ₽/м</option>"; }
+      else Object.keys(cats).forEach(function(c){ html+='<option value="'+cats[c]+'" data-l="'+wl+" · "+c+'">'+wl+" · "+c+" — "+cats[c]+" ₽/м</option>"; });
+    });
+    html+="</optgroup>";
+    ["agt","5k"].forEach(function(k){
+      var kr=K[k]; html+='<optgroup label="'+kr.label+'">';
+      Object.keys(kr.vals).forEach(function(c){ html+='<option value="'+kr.vals[c]+'" data-l="'+kr.label+" · "+c+'">'+kr.label+" · "+c+" — "+kr.vals[c]+" ₽/м</option>"; });
+      html+="</optgroup>";
+    });
+    elEdgeMatPreset.innerHTML=html;
+  }
+  function edgeMatLabel(){ var o=elEdgeMatPreset.options[elEdgeMatPreset.selectedIndex]; return o?(o.getAttribute("data-l")||""):""; }
+  function fillDecorSearch(){
+    var opts=[];
+    EGGER.forEach(function(r){ opts.push('<option value="Egger · '+r[1]+' ('+r[0]+')">'); });
+    AMK_DECOR.forEach(function(d){ opts.push('<option value="АМК · '+d[0]+' — '+d[1]+'">'); });
+    elDecorList.innerHTML=opts.join("");
+  }
+  function availThick(catKey, gkey){
+    if(catKey==="egger"){
+      var t=[]; [8,16,18,25].forEach(function(th){ if(decorHasThick(th)) t.push(th); }); return t;
+    }
+    var g=MAT[catKey].groups[gkey]; if(!g) return MAT[catKey].thick;
+    return Object.keys(g.price).map(Number).sort(function(a,b){return a-b;});
+  }
+  function decorHasThick(th){ var r=EGGER[parseInt(elDecor.value,10)]; return r? r[THICK_COL[th]]!=null : true; }
+
+  function fillGroups(catKey){
+    var g=MAT[catKey].groups, keys=Object.keys(g);
+    elGroup.innerHTML=keys.map(function(k){ return '<option value="'+k+'">'+g[k].label+'</option>'; }).join("");
+  }
+  function fillThickness(catKey){
+    var gkey=elGroup.value, list=availThick(catKey,gkey);
+    var prev=parseInt(elThickness.value,10);
+    var keep=list.indexOf(prev)>=0?prev:(list.indexOf(16)>=0?16:list[0]);
+    elThickness.innerHTML=list.map(function(t){ return '<option value="'+t+'"'+(t===keep?" selected":"")+'>'+t+' мм</option>'; }).join("");
+    elThickness.value=keep;
+  }
+  function populateEggerDecors(){
+    var q=(elDecorSearch.value||"").toLowerCase().replace("egger ·","").trim();
+    var opts=[];
+    EGGER.forEach(function(r,i){
+      var has=[8,16,18,25].some(function(th){return r[THICK_COL[th]]!=null;});
+      if(!has) return;
+      opts.push('<option value="'+i+'">'+r[1]+' ('+r[0]+')</option>');
+    });
+    elDecor.innerHTML=opts.join("");
+  }
+
+  function toggleCategory(){
+    var cat=elCat.value, isEgger=cat==="egger";
+    elEggerWrap.style.display=isEgger?"flex":"none";
+    if(isEgger){ populateEggerDecors(); }
+    else { fillGroups(cat); }
+    var multiGroup = !isEgger && Object.keys(MAT[cat].groups).length>1;
+    elGroupWrap.style.display=multiGroup?"flex":"none";
+    // единственная группа — всё равно нужна для расчёта, просто скрыта
+    elGroupLabel.textContent = /Фанера|фанера/.test(isEgger?"":MAT[cat].label)?"Декор":"Группа";
+    fillThickness(cat);
+  }
+  function toggleExtra(){ elExtraWrap.style.display=elExtraToggle.checked?"grid":"none"; }
+
+  /* ---------- Расчёт ---------- */
+  function materialInfo(cat){
+    // returns {rozn, use, label, lmdf, unknown}
+    var t=parseInt(elThickness.value,10), mode=priceMode();
+    if(cat==="egger"){
+      var r=EGGER[parseInt(elDecor.value,10)]||null;
+      var lmdf=r?!!r[2]:false;
+      var rozn=r?eggerSheet(r[THICK_COL[t]]):null;
+      var use=rozn==null?null:(mode==="opt"?Math.round(rozn*(1-OPT_PCT/100)):rozn);
+      return {rozn:rozn,use:use,lmdf:lmdf,label:(r?r[1]+" ("+r[0]+"), ":"")+t+" мм"+(lmdf?" · ЛМДФ":""),unknown:false};
+    }
+    var m=MAT[cat], g=m.groups[elGroup.value];
+    var rozn2=g?g.price[String(t)]:null;
+    var use2=null;
+    if(rozn2!=null){
+      // цена прайса по выбранной колонке (розница / опт), затем формула (×1.05 + 200)
+      var plv;
+      if(m.optFactor!=null) plv=(mode==="opt")?Math.round(rozn2*m.optFactor):rozn2;
+      else plv=(mode==="opt")?Math.round(rozn2*(1-OPT_PCT/100)):rozn2;
+      use2=markup(plv);
+    }
+    var gl=g?g.label:"";
+    // название декора (если выбрано через поиск и относится к текущему материалу/группе)
+    var decor=(pickedDecor && pickedDecor.cat===cat && pickedDecor.g===elGroup.value)?pickedDecor.name:"";
+    var lab=m.label+(decor?" · «"+decor+"»":"")+" · "+gl+", "+t+" мм";
+    return {rozn:rozn2,use:use2,lmdf:false,decor:decor,label:lab,unknown:false};
+  }
+
+  function compute(){
+    var cat=elCat.value, source=elSource.value;
+    var t=parseInt(elThickness.value,10), sheets=intv(elSheets);
+    var mi=materialInfo(cat);
+    var materialCost=(source==="buy" && mi.use)?mi.use*sheets:0;
+    var materialUnknown=(source==="buy" && !mi.use);
+    var cutCost=cutPricePerSheet(cutKindOf(cat,mi.lmdf),t)*sheets;
+    // Кромка: материал и поклейка — независимы (свои ставки И свой метраж)
+    var edgeMatRate=num(elEdgeMatPrice), edgeMatLen=num(elEdgeMatLen);
+    var edgeGlueRate=num(elEdgeGlueRate), edgeGlueLen=num(elEdgeGlueLen);
+    var edgeMatCost=edgeMatRate*edgeMatLen;
+    var edgeGlueCost=edgeGlueRate*edgeGlueLen;
+    var h10=intv(elH10),h20=intv(elH20),h35=intv(elH35);
+    var drillCost=h10*PRICE.hole.d10+h20*PRICE.hole.d20+h35*PRICE.hole.d35;
+
+    var extra={groove4:0,groove10:0,groove16:0,curve:0,offcutParts:0,angleCuts:0,leftoverCuts:0};
+    var extraCost=0;
+    if(elExtraToggle.checked){
+      extra.groove4=num(elGroove4); extra.groove10=num(elGroove10); extra.groove16=num(elGroove16);
+      extra.curve=num(elCurve);
+      extra.offcutParts=intv(elOffcutParts); extra.angleCuts=intv(elAngleCuts); extra.leftoverCuts=intv(elLeftoverCuts);
+      var E=PRICE.extra;
+      extraCost=extra.groove4*E.groove4+extra.groove10*E.groove10+extra.groove16*E.groove16
+        +extra.curve*E.curve
+        +extra.offcutParts*E.offcutPart+extra.angleCuts*E.angleCut+extra.leftoverCuts*E.leftoverCut;
+    }
+    var total=materialCost+cutCost+edgeMatCost+edgeGlueCost+drillCost+extraCost;
+    return {cat:cat,source:source,mode:priceMode(),t:t,sheets:sheets,materialLabel:mi.label,
+      edgeMatLen:edgeMatLen,edgeGlueLen:edgeGlueLen,edgeMatRate:edgeMatRate,edgeGlueRate:edgeGlueRate,edgeMatLabel:edgeMatLabel(),
+      h10:h10,h20:h20,h35:h35,extra:extra,
+      materialCost:materialCost,materialUnknown:materialUnknown,cutCost:cutCost,
+      edgeMatCost:edgeMatCost,edgeGlueCost:edgeGlueCost,
+      drillCost:drillCost,extraCost:extraCost,total:total};
+  }
+
+  function positionSummary(r){ return r.materialLabel+(r.sheets>0?" × "+r.sheets+" л.":""); }
+  function renderPositionsList(){
+    if(positions.length===0){ positionsWrap.style.display="none"; positionsListInner.innerHTML=""; currentLabelEl.style.display="none"; return; }
+    positionsWrap.style.display="block"; currentLabelEl.style.display="block";
+    positionsListInner.innerHTML=positions.map(function(p,i){
+      return '<div class="svccalc-position-row"><span class="pname">'+(i+1)+". "+p.summary+'</span><span class="pprice">'+money(p.total)+' ₽</span><button type="button" class="svccalc-position-remove" data-i="'+i+'" aria-label="Удалить">✕</button></div>';
+    }).join("");
+    Array.prototype.forEach.call(positionsListInner.querySelectorAll(".svccalc-position-remove"),function(btn){
+      btn.addEventListener("click",function(){ positions.splice(parseInt(btn.getAttribute("data-i"),10),1); renderPositionsList(); render(); scheduleSave(); });
+    });
+  }
+  function render(){
+    var r=compute();
+    var added=positions.reduce(function(s,p){return s+p.total;},0);
+    priceEl.textContent=money(added+r.total);
+    bMaterial.textContent=r.materialCost>0?money(r.materialCost)+" ₽":(r.materialUnknown?"уточняется":"—");
+    bCut.textContent=money(r.cutCost)+" ₽";
+    bEdgeMat.textContent=r.edgeMatCost>0?money(r.edgeMatCost)+" ₽":"—";
+    bEdge.textContent=r.edgeGlueCost>0?money(r.edgeGlueCost)+" ₽":"—";
+    bDrill.textContent=r.drillCost>0?money(r.drillCost)+" ₽":"—";
+    bExtra.textContent=r.extraCost>0?money(r.extraCost)+" ₽":"—";
+    materialNoteEl.textContent=r.materialUnknown?"Цена материала для этой позиции не задана — сообщим при подтверждении заявки, либо укажите «свой материал».":"";
+    return r;
+  }
+  function resetForm(){
+    elSheets.value="";
+    elEdgeMatPreset.value=""; elEdgeMatPrice.value="0"; elEdgeMatLen.value="0";
+    elEdgeGlueRate.value="50"; elEdgeGlueLen.value="0";
+    elH10.value="0"; elH20.value="0"; elH35.value="0";
+    elExtraToggle.checked=false; toggleExtra();
+    elGroove4.value="0"; elGroove10.value="0"; elGroove16.value="0"; elCurve.value="0";
+    elOffcutParts.value="0"; elAngleCuts.value="0"; elLeftoverCuts.value="0";
+  }
+
+  var SRC={own:"Свой материал (привозной)",buy:"Купить у нас"};
+  var MODE={rozn:"розница",opt:"опт"};
+
+  function positionLines(r){
+    var L=["Материал: "+r.materialLabel,
+      "Источник: "+SRC[r.source]+(r.source==="buy"?" ("+MODE[r.mode]+")":"")+(r.materialUnknown?" — цена уточняется":""),
+      "Листов: "+r.sheets];
+    if(r.edgeMatCost>0) L.push("Кромка-материал"+(r.edgeMatLabel?" ("+r.edgeMatLabel+")":"")+": "+r.edgeMatLen+" пог. м × "+r.edgeMatRate+" = "+money(r.edgeMatCost)+" ₽");
+    if(r.edgeGlueCost>0) L.push("Поклейка кромки: "+r.edgeGlueLen+" пог. м × "+r.edgeGlueRate+" = "+money(r.edgeGlueCost)+" ₽");
+    if(r.h10||r.h20||r.h35) L.push("Присадка: Ø4–10="+r.h10+", Ø10–20="+r.h20+", Ø25–35="+r.h35+" шт");
+    var e=r.extra;
+    if(e.groove4||e.groove10||e.groove16) L.push("Паз: 4мм="+e.groove4+", 10мм="+e.groove10+", 16мм="+e.groove16+" пог.м");
+    if(e.curve) L.push("Фигурный рез: "+e.curve+" пог.м");
+    if(e.offcutParts) L.push("Раскрой из обрезков: "+e.offcutParts+" дет.");
+    if(e.angleCuts) L.push("Рез под углом: "+e.angleCuts+" срез.");
+    if(e.leftoverCuts) L.push("Роспуск остатка: "+e.leftoverCuts+" пропил.");
+    L.push("Стоимость позиции: "+money(r.total)+" ₽");
+    return L;
+  }
+  function buildMessage(cur){
+    var all=positions.concat([cur]);
+    var lines=["Расчёт стоимости материалов и услуг — калькулятор СРЕДА.", "Документ: "+(docName()||"—")];
+    all.forEach(function(r,i){ lines.push(""); if(all.length>1) lines.push("Позиция "+(i+1)+":"); lines=lines.concat(positionLines(r)); });
+    var grand=all.reduce(function(s,r){return s+r.total;},0);
+    lines.push(""); lines.push((all.length>1?"ИТОГО по заявке: ":"Ориентировочная стоимость: ")+money(grand)+" ₽");
+    var name=(elName.value||"").trim(), phone=(elPhone.value||"").trim();
+    if(name||phone){ lines.push(""); if(name) lines.push("Имя/компания: "+name); if(phone) lines.push("Телефон: "+phone); }
+    return lines.join("\n");
+  }
+  function flash(msg,isErr){ statusEl.textContent=msg; statusEl.classList.add("show"); statusEl.classList.toggle("is-error",!!isErr); }
+
+  /* ---------- Печатная смета ---------- */
+  function positionRows(r){
+    var E=PRICE.extra, rows=[];
+    rows.push({n:"Материал: "+r.materialLabel+(r.source==="own"?" (давальческий)":""),
+               q:r.sheets, u:"лист", p:r.materialCost>0?Math.round(r.materialCost/r.sheets):null, s:r.materialCost>0?r.materialCost:null});
+    if(r.cutCost>0) rows.push({n:"Раскрой плитного материала (нестинг ЧПУ)", q:r.sheets, u:"лист", p:r.sheets?Math.round(r.cutCost/r.sheets):0, s:r.cutCost});
+    if(r.edgeMatCost>0) rows.push({n:"Кромка-материал"+(r.edgeMatLabel?" — "+r.edgeMatLabel:""), q:r.edgeMatLen, u:"пог. м", p:r.edgeMatRate, s:r.edgeMatCost});
+    if(r.edgeGlueCost>0) rows.push({n:"Поклейка кромки (услуга)", q:r.edgeGlueLen, u:"пог. м", p:r.edgeGlueRate, s:r.edgeGlueCost});
+    if(r.drillCost>0) rows.push({n:"Присадка — сверление отверстий (Ø4–10: "+r.h10+", Ø10–20: "+r.h20+", Ø25–35: "+r.h35+")", q:r.h10+r.h20+r.h35, u:"отв.", p:null, s:r.drillCost});
+    var e=r.extra;
+    if(e.groove4) rows.push({n:"Пазование под ДВП, 4 мм", q:e.groove4, u:"пог. м", p:E.groove4, s:e.groove4*E.groove4});
+    if(e.groove10) rows.push({n:"Пазование под ДВП, 10 мм", q:e.groove10, u:"пог. м", p:E.groove10, s:e.groove10*E.groove10});
+    if(e.groove16) rows.push({n:"Пазование под ДВП, 16 мм", q:e.groove16, u:"пог. м", p:E.groove16, s:e.groove16*E.groove16});
+    if(e.curve) rows.push({n:"Фигурный / криволинейный рез", q:e.curve, u:"пог. м", p:E.curve, s:e.curve*E.curve});
+    if(e.offcutParts) rows.push({n:"Раскрой из обрезков заказчика", q:e.offcutParts, u:"дет.", p:E.offcutPart, s:e.offcutParts*E.offcutPart});
+    if(e.angleCuts) rows.push({n:"Рез под углом 45° / по пластику", q:e.angleCuts, u:"срез", p:E.angleCut, s:e.angleCuts*E.angleCut});
+    if(e.leftoverCuts) rows.push({n:"Роспуск остатка для транспортировки", q:e.leftoverCuts, u:"пропил", p:E.leftoverCut, s:e.leftoverCuts*E.leftoverCut});
+    return rows;
+  }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function buildPrintDoc(){
+    var cur=compute();
+    var all=positions.slice();
+    if(cur.total>0 || all.length===0) all.push(cur);
+    var d=new Date(), dd=("0"+d.getDate()).slice(-2)+"."+("0"+(d.getMonth()+1)).slice(-2)+"."+d.getFullYear();
+    var grand=all.reduce(function(s,r){return s+r.total;},0);
+    var nQty=0;
+
+    var body="";
+    all.forEach(function(r,i){
+      body+='<tr class="pd-pos"><td colspan="5">Позиция '+(i+1)+' · '+esc(r.materialLabel)+'</td></tr>';
+      positionRows(r).forEach(function(x){
+        nQty++;
+        body+='<tr><td>'+nQty+'</td><td>'+esc(x.n)+'</td>'
+          +'<td class="num">'+(x.q||x.q===0?x.q:"—")+' '+x.u+'</td>'
+          +'<td class="num">'+(x.p==null?"—":money(x.p))+'</td>'
+          +'<td class="num">'+(x.s==null?"—":money(x.s))+'</td></tr>';
+      });
+    });
+
+    var name=(elName.value||"").trim(), phone=(elPhone.value||"").trim();
+    var client = (name||phone) ? '<div class="pd-meta">Заказчик: '+esc(name)+(phone?" · "+esc(phone):"")+'</div>' : '';
+
+    var html=''
+    +'<div class="pd-top">'
+    +'  <div class="pd-co"><div class="nm">СРЕДА</div>'
+    +'    ИП Малюга Александр Сергеевич<br>ОГРНИП 323237500486910 · ИНН 231536618490<br>'
+    +'    г. Новороссийск, ул. Дзержинского, 211 к1<br>тел. +7 (988) 319-39-14 · 319.39.14@gmail.com</div>'
+    +'  <div class="pd-right"><div class="pd-title">Расчёт стоимости<br>материалов и услуг</div>'
+    +'    <div class="pd-meta">Документ: '+esc(docName()||"—")+'<br>от '+dd+' г.</div>'+client+'</div>'
+    +'</div>'
+    +'<table class="pd"><thead><tr>'
+    +'<th style="width:26px">№</th><th>Материал / услуга</th><th class="num">Кол-во</th><th class="num">Цена, ₽</th><th class="num">Сумма, ₽</th>'
+    +'</tr></thead><tbody>'+body
+    +'<tr class="pd-total"><td colspan="4">ИТОГО к оплате</td><td class="num">'+money(grand)+' ₽</td></tr>'
+    +'</tbody></table>'
+    +'<div class="pd-note">Услуги оказываются в соответствии с действующими стандартами. Предельные отклонения размеров деталей, качество раскроя и кромкооблицовки — согласно <b>ГОСТ 16371-2014 «Мебель. Общие технические условия»</b>. Стандартный допуск на раскрой деталей — <b>±0,5 мм</b>, если иное не согласовано отдельно; отклонение по диагонали и качество облицовывания кромкой — в пределах, установленных ГОСТ. Возможен разнотон в пределах допусков изготовителя плиты. Расчёт носит предварительный характер и не является публичной офертой.</div>'
+    +'<div class="pd-sign">'
+    +'  <div class="pd-sign-row"><div class="cap">С условиями и сроками оказания услуг ознакомлен(а) и согласен(на):</div>'
+    +'    <div class="pd-linewrap"><span class="pd-line"></span><span class="pd-linelbl">подпись</span>'
+    +'      <span class="pd-line"></span><span class="pd-linelbl">Ф.И.О.</span>'
+    +'      <span class="pd-line" style="max-width:120px"></span><span class="pd-linelbl">дата</span></div></div>'
+    +'  <div class="pd-sign-row"><div class="cap">Размеры деталей проверил, указаны верно:</div>'
+    +'    <div class="pd-linewrap"><span class="pd-line"></span><span class="pd-linelbl">подпись</span>'
+    +'      <span class="pd-line"></span><span class="pd-linelbl">Ф.И.О.</span></div></div>'
+    +'</div>'
+    +'<div class="pd-exec"><div>Исполнитель: ИП Малюга А.С. ___________________ <span class="pd-linelbl">(подпись, М.П.)</span></div>'
+    +'<div>Расчёт составил: ___________________</div></div>';
+
+    document.getElementById("svcPrintDoc").innerHTML=html;
+  }
+
+  /* ---------- Быстрый поиск декора ---------- */
+  function applyDecorSearch(){
+    var v=elDecorSearch.value||"";
+    if(v.indexOf("Egger · ")===0){
+      pickedDecor=null; elCat.value="egger"; toggleCategory();
+      var code=v.replace("Egger · ","");
+      for(var i=0;i<EGGER.length;i++){ if(code.indexOf("("+EGGER[i][0]+")")>=0 && code.indexOf(EGGER[i][1])>=0){ elDecor.value=i; break; } }
+      fillThickness("egger"); render(); return;
+    }
+    if(v.indexOf("АМК · ")===0){
+      var rest=v.replace("АМК · ",""); var parts=rest.split(" — ");
+      var nm=parts[0], coll=parts[1];
+      var key=AMK_COLL[coll]; if(!key) return;
+      // найти группу по имени+коллекции
+      var gk=null;
+      for(var j=0;j<AMK_DECOR.length;j++){ if(AMK_DECOR[j][0]===nm && AMK_DECOR[j][1]===coll){ gk=(coll==="FAVORITE")?"all":("g"+AMK_DECOR[j][2]); break; } }
+      elCat.value=key; toggleCategory();
+      if(gk && MAT[key].groups[gk]){ elGroup.value=gk; }
+      pickedDecor={cat:key,g:gk,name:nm};
+      fillThickness(key); render();
+    }
+  }
+
+  /* ---------- Документы: автосохранение в localStorage ---------- */
+  var LS_KEY="svcCalcDocs_v1", saveTimer=null;
+  function loadStore(){ try{ return JSON.parse(localStorage.getItem(LS_KEY))||{docs:{},order:[]}; }catch(e){ return {docs:{},order:[]}; } }
+  function saveStore(s){ try{ localStorage.setItem(LS_KEY, JSON.stringify(s)); return true; }catch(e){ return false; } }
+  function docName(){ return (elDocName.value||"").trim(); }
+
+  var FORM_IDS=["svcCategory","svcGroup","svcThickness","svcDecor","svcSheets","svcMaterialSource",
+    "svcEdgeMatPreset","svcEdgeMatPrice","svcEdgeMatLen","svcEdgeGlueRate","svcEdgeGlueLen","svcHole10","svcHole20","svcHole35",
+    "svcGroove4","svcGroove10","svcGroove16","svcCurve",
+    "svcOffcutParts","svcAngleCuts","svcLeftoverCuts","svcName","svcPhone"];
+  function getFormState(){
+    var f={}; FORM_IDS.forEach(function(id){ var el=$(id); if(el) f[id]=el.value; });
+    f.svcExtraToggle=elExtraToggle.checked; f.svcPriceMode=priceMode(); f.pickedDecor=pickedDecor;
+    return f;
+  }
+  function setFormState(f){
+    if(!f) return;
+    elCat.value=f.svcCategory||"egger"; pickedDecor=f.pickedDecor||null; toggleCategory();
+    if(f.svcCategory!=="egger" && f.svcGroup && MAT[f.svcCategory] && MAT[f.svcCategory].groups[f.svcGroup]) elGroup.value=f.svcGroup;
+    fillThickness(elCat.value);
+    if(f.svcThickness && Array.prototype.some.call(elThickness.options,function(o){return o.value==f.svcThickness;})) elThickness.value=f.svcThickness;
+    if(f.svcCategory==="egger" && f.svcDecor!=null && elDecor.querySelector('option[value="'+f.svcDecor+'"]')) elDecor.value=f.svcDecor;
+    FORM_IDS.forEach(function(id){ if(id==="svcCategory"||id==="svcGroup"||id==="svcThickness"||id==="svcDecor") return; var el=$(id); if(el && f[id]!=null) el.value=f[id]; });
+    elExtraToggle.checked=!!f.svcExtraToggle; toggleExtra();
+    var pm=document.querySelector('input[name=svcPriceMode][value="'+(f.svcPriceMode||"rozn")+'"]'); if(pm) pm.checked=true;
+    render();
+  }
+  function setStatus(msg,color){ if(elSaveStatus){ elSaveStatus.textContent=msg; elSaveStatus.style.color=color||"#8a7c64"; } }
+  function refreshDocSelect(current){
+    var s=loadStore(), names=(s.order&&s.order.length)?s.order:Object.keys(s.docs);
+    elDocSelect.innerHTML='<option value="">— открыть сохранённый расчёт —</option>'+names.map(function(n){
+      return '<option value="'+esc(n)+'"'+(n===current?" selected":"")+'>'+esc(n)+'</option>'; }).join("");
+  }
+  function doSave(){
+    var name=docName();
+    if(!name){ setStatus("Впишите название документа — без него расчёт не сохраняется.","#E08A6B"); return false; }
+    var s=loadStore();
+    s.docs[name]={ name:name, positions:positions, form:getFormState(), updated:Date.now() };
+    s.order=[name].concat((s.order||[]).filter(function(n){return n!==name;}));
+    if(!saveStore(s)){ setStatus("Не удалось сохранить (localStorage недоступен).","#E08A6B"); return false; }
+    refreshDocSelect(name);
+    setStatus("Сохранено: «"+name+"» · "+new Date().toLocaleString("ru-RU"),"#7bbf8a");
+    return true;
+  }
+  function scheduleSave(){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(doSave,500); }
+  function openDoc(name){
+    var s=loadStore(), d=s.docs[name]; if(!d) return;
+    positions=(d.positions||[]).slice(); renderPositionsList();
+    elDocName.value=name; setFormState(d.form); refreshDocSelect(name);
+    setStatus("Открыт документ «"+name+"».","#8a7c64");
+  }
+  function newDoc(){
+    positions=[]; renderPositionsList(); pickedDecor=null;
+    elDocName.value=""; elCat.value="egger"; toggleCategory();
+    elSource.value="own"; elName.value=""; elPhone.value=""; resetForm();
+    refreshDocSelect(""); render(); elDocName.focus();
+    setStatus("Новый документ — впишите название, дальше он сохраняется автоматически.","#8a7c64");
+  }
+  function deleteDoc(){
+    var name=docName()||elDocSelect.value; if(!name) return;
+    if(!window.confirm("Удалить документ «"+name+"»?")) return;
+    var s=loadStore(); delete s.docs[name]; s.order=(s.order||[]).filter(function(n){return n!==name;}); saveStore(s);
+    newDoc();
+  }
+
+  /* ---------- События ---------- */
+  elDocName.addEventListener("input",scheduleSave);
+  elDocSelect.addEventListener("change",function(){ if(elDocSelect.value) openDoc(elDocSelect.value); });
+  $("svcDocNew").addEventListener("click",newDoc);
+  $("svcDocDelete").addEventListener("click",deleteDoc);
+  elCat.addEventListener("change",function(){ pickedDecor=null; toggleCategory(); render(); });
+  elGroup.addEventListener("change",function(){ pickedDecor=null; fillThickness(elCat.value); render(); });
+  elThickness.addEventListener("change",render);
+  elDecor.addEventListener("change",function(){ fillThickness("egger"); render(); });
+  elDecorSearch.addEventListener("change",applyDecorSearch);
+  elExtraToggle.addEventListener("change",function(){ toggleExtra(); render(); });
+  elEdgeMatPreset.addEventListener("change",function(){ if(elEdgeMatPreset.value!==""){ elEdgeMatPrice.value=elEdgeMatPreset.value; } render(); scheduleSave(); });
+  form.addEventListener("input",function(){ render(); scheduleSave(); });
+  form.addEventListener("change",function(){ render(); scheduleSave(); });
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=svcPriceMode]'),function(r){ r.addEventListener("change",render); });
+
+  $("svcAddPosition").addEventListener("click",function(){
+    var r=compute();
+    if(r.total<=0){ flash("Заполните хотя бы одну операцию, чтобы добавить позицию.",true); return; }
+    r.summary=positionSummary(r); positions.push(r);
+    renderPositionsList(); resetForm(); render(); scheduleSave();
+    flash("Позиция добавлена. Форма очищена для следующей.");
+  });
+  $("svcPrint").addEventListener("click",function(){
+    var name=docName();
+    if(!name){ flash("Впишите «Название документа», чтобы сохранить и распечатать.",true); elDocName.focus(); return; }
+    doSave();
+    document.title="Смета — "+name;
+    buildPrintDoc();
+    window.print();
+  });
+
+  /* ---------- Инициализация ---------- */
+  fillCategories(); fillDecorSearch(); fillEdgeMatPresets(); toggleCategory(); toggleExtra(); render();
+  (function initDocs(){
+    var s=loadStore(), names=(s.order&&s.order.length)?s.order:Object.keys(s.docs);
+    refreshDocSelect("");
+    if(names.length){ openDoc(names[0]); }
+    else setStatus("Впишите «Название документа» — расчёт будет сохраняться автоматически.","#8a7c64");
+  })();
+  var yr=$("yr"); if(yr) yr.textContent=new Date().getFullYear();
+})();
+</script>
+</body>
+</html>

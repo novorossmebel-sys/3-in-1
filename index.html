@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>СРЕДА · Калькуляторы</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2048%2048%27%3E%3Crect%20width%3D%2748%27%20height%3D%2748%27%20rx%3D%2710%27%20fill%3D%27%2320180F%27/%3E%3Ctext%20x%3D%2724%27%20y%3D%2734%27%20font-family%3D%27Georgia%2Cserif%27%20font-size%3D%2730%27%20fill%3D%27%23F4EEE3%27%20text-anchor%3D%27middle%27%3E%D0%A1%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bone:#F4EEE3; --bone-2:#FBF7EF; --cream:#EFE6D6;
+  --espresso:#20180F; --espresso-2:#2C2116;
+  --ink:#1E1710; --walnut:#6A4A2E; --oak:#B98A54;
+  --brass:#B08444; --brass-lt:#C79C5C; --line:#D9CDB8; --line-dk:#3A2C1D;
+  --bad:#A94438;
+  --f-display:Georgia,'Times New Roman',serif;
+  --f-sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:var(--f-sans);background:var(--bone);color:var(--ink);overflow:hidden}
+
+/* ---------- Верхняя панель + вкладки ---------- */
+.appbar{display:flex;align-items:center;gap:16px;background:var(--espresso);color:var(--bone-2);
+  padding:0 16px;height:54px;border-bottom:3px solid var(--brass);flex-wrap:nowrap}
+.brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+.brand .logo{font-family:var(--f-display);font-weight:700;letter-spacing:.16em;font-size:19px;text-transform:uppercase}
+.brand .tag{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass-lt)}
+.tabs{display:flex;gap:4px;margin-left:8px;flex:1;min-width:0;overflow-x:auto}
+.tab{appearance:none;border:1px solid transparent;background:transparent;color:#C9BCA6;
+  font:inherit;font-size:14px;font-weight:600;padding:8px 16px;border-radius:8px 8px 0 0;
+  cursor:pointer;white-space:nowrap;transition:.15s;position:relative;top:2px}
+.tab:hover{color:var(--bone-2);background:rgba(255,255,255,.06)}
+.tab.active{background:var(--bone);color:var(--espresso);box-shadow:0 -2px 0 var(--brass) inset}
+.lock-btn{margin-left:auto;appearance:none;border:1px solid var(--line-dk);background:var(--espresso-2);
+  color:#C9BCA6;font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.lock-btn:hover{color:#fff;border-color:var(--brass)}
+
+/* ---------- Область калькуляторов ---------- */
+.stage{position:relative;height:calc(100% - 54px);background:var(--bone)}
+.frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bone)}
+.frame.active{display:block}
+.frame-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--walnut);font-size:14px}
+
+/* ---------- Экран пароля ---------- */
+.gate{position:fixed;inset:0;z-index:100;background:var(--espresso);
+  display:flex;align-items:center;justify-content:center;padding:24px}
+.gate.hidden{display:none}
+.gate-card{width:100%;max-width:360px;background:var(--bone-2);border:1px solid var(--line);
+  border-radius:14px;padding:34px 30px;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center}
+.gate .logo{font-family:var(--f-display);font-weight:700;letter-spacing:.2em;font-size:30px;
+  text-transform:uppercase;color:var(--espresso)}
+.gate .tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--walnut);margin-top:4px}
+.gate h1{font-family:var(--f-display);font-weight:400;font-size:18px;margin:22px 0 4px;color:var(--ink)}
+.gate p{font-size:13px;color:var(--walnut);margin-bottom:18px}
+.gate input{width:100%;border:1px solid var(--line);border-radius:8px;padding:13px 14px;
+  font:inherit;font-size:16px;text-align:center;letter-spacing:.15em;background:#fff;color:var(--ink);outline:none}
+.gate input:focus{border-color:var(--brass);box-shadow:0 0 0 3px rgba(176,132,68,.2)}
+.gate button{width:100%;margin-top:14px;border:1px solid var(--espresso);background:var(--espresso);
+  color:var(--bone-2);font:inherit;font-size:15px;font-weight:600;padding:13px;border-radius:8px;cursor:pointer}
+.gate button:hover{background:#000}
+.gate .err{color:var(--bad);font-size:13px;margin-top:12px;min-height:18px}
+.gate .note{font-size:11px;color:var(--walnut);margin-top:18px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<!-- ===================== ЭКРАН ПАРОЛЯ ===================== -->
+<div class="gate" id="gate">
+  <form class="gate-card" id="gateForm" autocomplete="off">
+    <div class="logo">Среда</div>
+    <div class="tag">Мебель на заказ · Новороссийск</div>
+    <h1>Калькуляторы</h1>
+    <p>Введите пароль для доступа</p>
+    <input type="password" id="pwd" inputmode="numeric" placeholder="••••••••" autofocus>
+    <button type="submit">Войти</button>
+    <div class="err" id="gateErr"></div>
+    <div class="note">Просчёт мебели · Фасады · Распил — в одном месте.</div>
+  </form>
+</div>
+
+<!-- ===================== ПРИЛОЖЕНИЕ ===================== -->
+<div class="appbar">
+  <div class="brand">
+    <span class="logo">Среда</span>
+    <span class="tag">Калькуляторы</span>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-frame="mebel"  data-src="mebel.html">Просчёт мебели</button>
+    <button class="tab"        data-frame="fasad"  data-src="fasad.html">Фасады</button>
+    <button class="tab"        data-frame="raspil" data-src="raspil.html">Распил</button>
+  </div>
+  <button class="lock-btn" id="lockBtn" title="Заблокировать и выйти">🔒 Выйти</button>
+</div>
+
+<div class="stage" id="stage">
+  <iframe class="frame active" id="frame-mebel"  title="Просчёт мебели"></iframe>
+  <iframe class="frame"        id="frame-fasad"  title="Фасады"></iframe>
+  <iframe class="frame"        id="frame-raspil" title="Распил"></iframe>
+</div>
+
+<script>
+/* =========================================================================
+   ПАРОЛЬ. Чтобы сменить — впишите новый между кавычек в строке ниже
+   и сохраните файл. Это простая защита от случайных посетителей
+   (проверка в браузере), а не банковский уровень безопасности.
+   ========================================================================= */
+var PASSWORD = "01010101";
+
+/* ------- Ключ разблокировки на время сессии браузера ------- */
+var UNLOCK_KEY = "sreda3in1_unlocked";
+var gate = document.getElementById("gate");
+var gateForm = document.getElementById("gateForm");
+var pwd = document.getElementById("pwd");
+var gateErr = document.getElementById("gateErr");
+
+function unlock(){
+  try{ sessionStorage.setItem(UNLOCK_KEY, "1"); }catch(e){}
+  gate.classList.add("hidden");
+  activate(currentFrame || "mebel");
+}
+function lock(){
+  try{ sessionStorage.removeItem(UNLOCK_KEY); }catch(e){}
+  gate.classList.remove("hidden");
+  pwd.value = ""; gateErr.textContent = "";
+  setTimeout(function(){ pwd.focus(); }, 50);
+}
+gateForm.addEventListener("submit", function(e){
+  e.preventDefault();
+  if(pwd.value === PASSWORD){ unlock(); }
+  else { gateErr.textContent = "Неверный пароль"; pwd.select(); }
+});
+
+/* ------- Вкладки: iframe загружается при первом открытии и остаётся ------- */
+var currentFrame = "mebel";
+function activate(name){
+  currentFrame = name;
+  var tabs = document.querySelectorAll(".tab");
+  tabs.forEach(function(t){
+    var on = t.dataset.frame === name;
+    t.classList.toggle("active", on);
+    var f = document.getElementById("frame-" + t.dataset.frame);
+    f.classList.toggle("active", on);
+    if(on && !f.getAttribute("src")){ f.setAttribute("src", t.dataset.src); }
+  });
+}
+document.getElementById("tabs").addEventListener("click", function(e){
+  var t = e.target.closest(".tab"); if(!t) return;
+  activate(t.dataset.frame);
+});
+document.getElementById("lockBtn").addEventListener("click", lock);
+
+/* ------- Старт: уже разблокировано в этой сессии? ------- */
+var already = false;
+try{ already = sessionStorage.getItem(UNLOCK_KEY) === "1"; }catch(e){}
+if(already){ unlock(); }
+else { setTimeout(function(){ pwd.focus(); }, 50); }
+</script>
+</body>
+</html>

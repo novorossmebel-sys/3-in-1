@@ -133,6 +133,11 @@ function applyRole(role){
 }
 function unlock(role){
   try{ sessionStorage.setItem(UNLOCK_KEY, role); }catch(e){}
+  // Если роль сменилась — перезагрузим вкладки, чтобы метка #mgr обновилась.
+  if(currentRole && currentRole !== role){
+    document.querySelectorAll(".frame").forEach(function(f){ f.removeAttribute("src"); });
+  }
+  currentRole = role;
   applyRole(role);
   gate.classList.add("hidden");
   activate(currentFrame || "mebel");
@@ -140,6 +145,8 @@ function unlock(role){
 function lock(){
   try{ sessionStorage.removeItem(UNLOCK_KEY); }catch(e){}
   watermark.classList.remove("show");
+  // Сбрасываем загруженные вкладки, чтобы следующий вход загрузил их под новой ролью.
+  document.querySelectorAll(".frame").forEach(function(f){ f.removeAttribute("src"); });
   gate.classList.remove("hidden");
   pwd.value = ""; gateErr.textContent = "";
   setTimeout(function(){ pwd.focus(); }, 50);
@@ -153,6 +160,9 @@ gateForm.addEventListener("submit", function(e){
 
 /* ------- Вкладки: iframe загружается при первом открытии и остаётся ------- */
 var currentFrame = "mebel";
+var currentRole = null;
+// Менеджеру передаём в калькулятор метку #mgr — по ней он ставит водяной знак на печать.
+function frameSrc(base){ return base + (currentRole === "manager" ? "#mgr" : ""); }
 function activate(name){
   currentFrame = name;
   var tabs = document.querySelectorAll(".tab");
@@ -161,7 +171,7 @@ function activate(name){
     t.classList.toggle("active", on);
     var f = document.getElementById("frame-" + t.dataset.frame);
     f.classList.toggle("active", on);
-    if(on && !f.getAttribute("src")){ f.setAttribute("src", t.dataset.src); }
+    if(on && !f.getAttribute("src")){ f.setAttribute("src", frameSrc(t.dataset.src)); }
   });
 }
 document.getElementById("tabs").addEventListener("click", function(e){

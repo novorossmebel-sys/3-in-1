@@ -357,6 +357,18 @@ footer a:hover{color:var(--brass-lt)}
   /* Доступ только через защищённую паролем страницу index.html.
      Этот калькулятор используется только во вкладке; открыт напрямую — уводим на вход. */
   if(window.top===window.self){ window.location.replace('index.html'); return; }
+
+  /* Водяной знак «среда» на печати — включается, когда вкладку открыл менеджер (index.html передаёт #mgr). */
+  var SREDA_MANAGER = String(location.hash||"").indexOf("mgr") >= 0;
+  (function(){
+    if(!SREDA_MANAGER) return;
+    var css='.sreda-print-wm{display:none}@media print{.sreda-print-wm{display:block!important;position:fixed;left:10mm;bottom:10mm;margin:0;font-family:Georgia,"Times New Roman",serif;font-size:34px;letter-spacing:.1em;text-transform:lowercase;color:#000;opacity:.14;z-index:99999;pointer-events:none}}';
+    function inject(){
+      if(!document.getElementById('sreda-print-wm-style')){ var st=document.createElement('style'); st.id='sreda-print-wm-style'; st.textContent=css; (document.head||document.documentElement).appendChild(st); }
+      if(document.body && !document.querySelector('.sreda-print-wm')){ var d=document.createElement('div'); d.className='sreda-print-wm'; d.textContent='среда'; document.body.appendChild(d); }
+    }
+    if(document.body) inject(); else document.addEventListener('DOMContentLoaded', inject);
+  })();
   /* ================= ТАРИФЫ РАБОТ (редактируются под свой прайс) ================= */
   var PRICE = {
     cut: { ldsp:{t8:450,t16:750,t22:800}, mdf:{t8:600,t16:750,t22:850}, fanera:{t6:500,t12:650,t18:800,t24:1000}, hdf:300 },
@@ -818,6 +830,7 @@ footer a:hover{color:var(--brass-lt)}
     +'    <div style="margin-top:6px">М.П.</div>'
     +'  </div>'
     +'</div>'
+    +(SREDA_MANAGER ? '<div style="position:fixed;left:10mm;bottom:10mm;font-family:Georgia,serif;font-size:34px;letter-spacing:.1em;text-transform:lowercase;color:#000;opacity:.14;z-index:99999;pointer-events:none">среда</div>' : '')
     +'</body></html>';
   }
   function printContract(){

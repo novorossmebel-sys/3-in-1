@@ -64,6 +64,14 @@ header{border-bottom:1px solid var(--line);background:var(--bone-2)}
 .svccalc-holes .svccalc-field{min-width:0}
 .svccalc-extra{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .svccalc-extra .svccalc-field{min-width:0}
+/* Дополнительные (нестандартные) услуги */
+#svcCustomWrap{grid-column:1/-1;display:flex;flex-direction:column;gap:10px}
+.svc-custom-row{display:flex;gap:10px;align-items:flex-end}
+.svc-custom-row .svccalc-field{min-width:0}
+.svc-custom-del{flex:none;width:46px;min-height:46px;border:1px solid var(--line-dk);border-radius:3px;
+  background:var(--espresso-2);color:#C9BCA6;cursor:pointer;font-size:16px;line-height:1}
+.svc-custom-del:hover{color:#fff;border-color:var(--brass)}
+@media(max-width:560px){.svc-custom-row{flex-wrap:wrap}.svc-custom-row .svccalc-field{flex:1 1 100%}}
 .seg{display:flex;gap:0;border:1px solid var(--line-dk);border-radius:3px;overflow:hidden}
 .seg label{flex:1;text-transform:none;letter-spacing:0}
 .seg input{display:none}
@@ -284,6 +292,13 @@ footer a:hover{color:var(--brass-lt)}
             <div class="svccalc-field"><label for="svcLeftoverCuts">Роспуск остатка для транспортировки, пропилов</label><input type="number" id="svcLeftoverCuts" min="0" step="1" value="0"></div>
           </div>
 
+          <div class="svccalc-sub">Дополнительно — нестандартные услуги</div>
+          <div id="svcCustomWrap"></div>
+          <div class="svccalc-field full">
+            <button type="button" class="btn btn-sm" id="svcCustomAdd">＋ Добавить услугу</button>
+            <div class="svccalc-hint" style="margin-top:6px">Впишите описание и цену за нестандартную услугу. Строк можно добавить несколько.</div>
+          </div>
+
           <div class="svccalc-field full">
             <button type="button" class="btn btn-brass" id="svcAddPosition">+ Добавить эту позицию в заявку</button>
           </div>
@@ -308,6 +323,7 @@ footer a:hover{color:var(--brass-lt)}
             <div class="row"><span>Поклейка кромки</span><span id="svcBEdge">—</span></div>
             <div class="row"><span>Присадка</span><span id="svcBDrill">—</span></div>
             <div class="row"><span>Доп. работы</span><span id="svcBExtra">—</span></div>
+            <div class="row"><span>Доп. услуги</span><span id="svcBCustom">—</span></div>
           </div>
           <div class="svccalc-note" id="svcMaterialNote"></div>
           <div class="svccalc-note">Расчёт предварительный и не является публичной офертой. Точную стоимость подтверждаем после проверки карты раскроя и спецификации.</div>
@@ -403,8 +419,9 @@ footer a:hover{color:var(--brass-lt)}
       elCurve=$("svcCurve"),
       elOffcutParts=$("svcOffcutParts"), elAngleCuts=$("svcAngleCuts"), elLeftoverCuts=$("svcLeftoverCuts"),
       elName=$("svcName"), elPhone=$("svcPhone"),
+      elCustomWrap=$("svcCustomWrap"),
       priceEl=$("svcPrice"), bMaterial=$("svcBMaterial"), bCut=$("svcBCut"), bEdge=$("svcBEdge"), bEdgeMat=$("svcBEdgeMat"),
-      bDrill=$("svcBDrill"), bExtra=$("svcBExtra"), materialNoteEl=$("svcMaterialNote"),
+      bDrill=$("svcBDrill"), bExtra=$("svcBExtra"), bCustom=$("svcBCustom"), materialNoteEl=$("svcMaterialNote"),
       statusEl=$("svcStatus"), positionsWrap=$("svcPositions"), positionsListInner=$("svcPositionsListInner"),
       currentLabelEl=$("svcCurrentLabel"),
       elDocName=$("svcDocName"), elDocSelect=$("svcDocSelect"), elSaveStatus=$("svcSaveStatus");
@@ -556,6 +573,31 @@ footer a:hover{color:var(--brass-lt)}
     return {rozn:rozn2,use:use2,lmdf:false,decor:decor,label:lab,unknown:false};
   }
 
+  /* ---------- Дополнительные (нестандартные) услуги ---------- */
+  function addCustomRow(name, price){
+    var row=document.createElement("div");
+    row.className="svc-custom-row";
+    row.innerHTML='<div class="svccalc-field" style="flex:1;min-width:0"><label>Описание услуги</label>'
+      +'<input type="text" class="svc-custom-name" placeholder="Например: срочность, упаковка, сборка…"></div>'
+      +'<div class="svccalc-field" style="width:120px;flex:none"><label>Цена, ₽</label>'
+      +'<input type="number" class="svc-custom-price" min="0" step="1" value="0"></div>'
+      +'<button type="button" class="svc-custom-del" title="Удалить услугу">✕</button>';
+    elCustomWrap.appendChild(row);
+    if(name!=null) row.querySelector(".svc-custom-name").value=name;
+    if(price!=null && price!=="") row.querySelector(".svc-custom-price").value=price;
+    row.querySelector(".svc-custom-del").addEventListener("click",function(){ row.remove(); render(); scheduleSave(); });
+    return row;
+  }
+  function readCustom(){
+    var rows=[];
+    Array.prototype.forEach.call(elCustomWrap.querySelectorAll(".svc-custom-row"),function(row){
+      var nm=(row.querySelector(".svc-custom-name").value||"").trim();
+      var pr=num(row.querySelector(".svc-custom-price"));
+      if(nm || pr>0) rows.push({name:nm||"Доп. услуга", price:pr});
+    });
+    return rows;
+  }
+
   function compute(){
     var cat=elCat.value, source=elSource.value;
     var t=parseInt(elThickness.value,10), sheets=intv(elSheets);
@@ -582,13 +624,15 @@ footer a:hover{color:var(--brass-lt)}
         +extra.curve*E.curve
         +extra.offcutParts*E.offcutPart+extra.angleCuts*E.angleCut+extra.leftoverCuts*E.leftoverCut;
     }
-    var total=materialCost+cutCost+edgeMatCost+edgeGlueCost+drillCost+extraCost;
+    var custom=readCustom();
+    var customCost=custom.reduce(function(s,c){return s+c.price;},0);
+    var total=materialCost+cutCost+edgeMatCost+edgeGlueCost+drillCost+extraCost+customCost;
     return {cat:cat,source:source,mode:priceMode(),t:t,sheets:sheets,materialLabel:mi.label,
       edgeMatLen:edgeMatLen,edgeGlueLen:edgeGlueLen,edgeMatRate:edgeMatRate,edgeGlueRate:edgeGlueRate,edgeMatLabel:edgeMatLabel(),
-      h10:h10,h20:h20,h35:h35,extra:extra,
+      h10:h10,h20:h20,h35:h35,extra:extra,custom:custom,
       materialCost:materialCost,materialUnknown:materialUnknown,cutCost:cutCost,
       edgeMatCost:edgeMatCost,edgeGlueCost:edgeGlueCost,
-      drillCost:drillCost,extraCost:extraCost,total:total};
+      drillCost:drillCost,extraCost:extraCost,customCost:customCost,total:total};
   }
 
   function positionSummary(r){ return r.materialLabel+(r.sheets>0?" × "+r.sheets+" л.":""); }
@@ -612,6 +656,7 @@ footer a:hover{color:var(--brass-lt)}
     bEdge.textContent=r.edgeGlueCost>0?money(r.edgeGlueCost)+" ₽":"—";
     bDrill.textContent=r.drillCost>0?money(r.drillCost)+" ₽":"—";
     bExtra.textContent=r.extraCost>0?money(r.extraCost)+" ₽":"—";
+    bCustom.textContent=r.customCost>0?money(r.customCost)+" ₽":"—";
     materialNoteEl.textContent=r.materialUnknown?"Цена материала для этой позиции не задана — сообщим при подтверждении заявки, либо укажите «свой материал».":"";
     return r;
   }
@@ -623,6 +668,7 @@ footer a:hover{color:var(--brass-lt)}
     elExtraToggle.checked=false; toggleExtra();
     elGroove4.value="0"; elGroove10.value="0"; elGroove16.value="0"; elCurve.value="0";
     elOffcutParts.value="0"; elAngleCuts.value="0"; elLeftoverCuts.value="0";
+    elCustomWrap.innerHTML="";
   }
 
   var SRC={own:"Свой материал (привозной)",buy:"Купить у нас"};
@@ -641,6 +687,7 @@ footer a:hover{color:var(--brass-lt)}
     if(e.offcutParts) L.push("Раскрой из обрезков: "+e.offcutParts+" дет.");
     if(e.angleCuts) L.push("Рез под углом: "+e.angleCuts+" срез.");
     if(e.leftoverCuts) L.push("Роспуск остатка: "+e.leftoverCuts+" пропил.");
+    (r.custom||[]).forEach(function(c){ L.push("Доп. услуга: "+c.name+" — "+money(c.price)+" ₽"); });
     L.push("Стоимость позиции: "+money(r.total)+" ₽");
     return L;
   }
@@ -673,6 +720,7 @@ footer a:hover{color:var(--brass-lt)}
     if(e.offcutParts) rows.push({n:"Раскрой из обрезков заказчика", q:e.offcutParts, u:"дет.", p:E.offcutPart, s:e.offcutParts*E.offcutPart});
     if(e.angleCuts) rows.push({n:"Рез под углом 45° / по пластику", q:e.angleCuts, u:"срез", p:E.angleCut, s:e.angleCuts*E.angleCut});
     if(e.leftoverCuts) rows.push({n:"Роспуск остатка для транспортировки", q:e.leftoverCuts, u:"пропил", p:E.leftoverCut, s:e.leftoverCuts*E.leftoverCut});
+    (r.custom||[]).forEach(function(c){ rows.push({n:c.name, q:1, u:"усл.", p:c.price, s:c.price}); });
     return rows;
   }
   function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
@@ -879,6 +927,7 @@ footer a:hover{color:var(--brass-lt)}
   function getFormState(){
     var f={}; FORM_IDS.forEach(function(id){ var el=$(id); if(el) f[id]=el.value; });
     f.svcExtraToggle=elExtraToggle.checked; f.svcPriceMode=priceMode(); f.pickedDecor=pickedDecor;
+    f.custom=readCustom();
     return f;
   }
   function setFormState(f){
@@ -890,6 +939,8 @@ footer a:hover{color:var(--brass-lt)}
     if(f.svcCategory==="egger" && f.svcDecor!=null && elDecor.querySelector('option[value="'+f.svcDecor+'"]')) elDecor.value=f.svcDecor;
     FORM_IDS.forEach(function(id){ if(id==="svcCategory"||id==="svcGroup"||id==="svcThickness"||id==="svcDecor") return; var el=$(id); if(el && f[id]!=null) el.value=f[id]; });
     elExtraToggle.checked=!!f.svcExtraToggle; toggleExtra();
+    elCustomWrap.innerHTML="";
+    (f.custom||[]).forEach(function(c){ addCustomRow(c.name, c.price); });
     var pm=document.querySelector('input[name=svcPriceMode][value="'+(f.svcPriceMode||"rozn")+'"]'); if(pm) pm.checked=true;
     render();
   }
@@ -946,6 +997,10 @@ footer a:hover{color:var(--brass-lt)}
   form.addEventListener("input",function(){ render(); scheduleSave(); });
   form.addEventListener("change",function(){ render(); scheduleSave(); });
   Array.prototype.forEach.call(document.querySelectorAll('input[name=svcPriceMode]'),function(r){ r.addEventListener("change",render); });
+  $("svcCustomAdd").addEventListener("click",function(){
+    var row=addCustomRow("",""); var nm=row.querySelector(".svc-custom-name"); if(nm) nm.focus();
+    render(); scheduleSave();
+  });
 
   $("svcAddPosition").addEventListener("click",function(){
     var r=compute();

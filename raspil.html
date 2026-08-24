@@ -194,6 +194,7 @@ footer a:hover{color:var(--brass-lt)}
             <label for="svcDocSelect">Сохранённые расчёты (сохраняются автоматически)</label>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <select id="svcDocSelect" style="flex:1;min-width:150px"></select>
+              <button type="button" id="svcDocSave" class="btn btn-brass btn-sm">💾 Сохранить</button>
               <button type="button" id="svcDocNew" class="btn btn-sm">＋ Новый</button>
               <button type="button" id="svcDocDelete" class="btn btn-sm">Удалить</button>
             </div>
@@ -985,6 +986,11 @@ footer a:hover{color:var(--brass-lt)}
   /* ---------- События ---------- */
   elDocName.addEventListener("input",scheduleSave);
   elDocSelect.addEventListener("change",function(){ if(elDocSelect.value) openDoc(elDocSelect.value); });
+  $("svcDocSave").addEventListener("click",function(){
+    var name=docName();
+    if(!name){ flash("Впишите «Название документа», чтобы сохранить расчёт.",true); elDocName.focus(); return; }
+    if(doSave()) flash("Расчёт сохранён: «"+name+"».");
+  });
   $("svcDocNew").addEventListener("click",newDoc);
   $("svcDocDelete").addEventListener("click",deleteDoc);
   elCat.addEventListener("change",function(){ pickedDecor=null; toggleCategory(); render(); });
